@@ -1,0 +1,223 @@
+{
+  "accueil": {
+    "hero": {
+      "tagline": "RICAMO DI LUSSO DAL 1997"
+    },
+    "intro": {
+      "p1": "Con oltre 30 anni di esperienza nella programmazione tessile, **Fil'ing Broderies**, fondata nel 1997, ha sempre avuto il desiderio di sviluppare il ricamo in tutte le sue forme.",
+      "p2": "La nostra missione?\nRaccogliere le sfide della personalizzazione dei vostri prodotti, dal **pezzo unico** alla **grande serie**."
+    },
+    "services": {
+      "creation": "Creazione",
+      "production": "Produzione"
+    },
+    "expertise": {
+      "p1": "Partner delle più grandi maison di lusso e dell'alta gamma, offriamo le nostre competenze in diversi settori come la **pelletteria**, il **pronto moda**, gli **accessori**, l'**arredamento**, la **moda balneare**, l'**eventi**, il **packaging...**"
+    },
+    "teaser": {
+      "title": "Scopri la nostra galleria"
+    },
+    "timeline": {
+      "regionLabel": "Timeline — tappe chiave di Fil'ing Broderies",
+      "milestoneLabel": "Tappa {year}",
+      "milestones": {
+        "y1994": "Un primo riferimento in questa cronologia, da confermare.",
+        "y1997": "Un riferimento fondativo nella storia dell'atelier.",
+        "y2001": "Una fase di sviluppo da documentare.",
+        "y2005": "Una tappa creativa da completare.",
+        "y2011": "Un'evoluzione del savoir-faire da precisare.",
+        "y2013": "Un nuovo capitolo dell'atelier da documentare.",
+        "y2015": "Un riferimento produttivo da completare.",
+        "y2023": "Una fase recente da precisare.",
+        "y2024": "L'ultimo riferimento di questa cronologia, da documentare."
+      },
+      "imageAlt": {
+        "y1994": "Anteprima tessile per il riferimento 1994",
+        "y1997": "Anteprima di ricamo per il riferimento 1997",
+        "y2001": "Anteprima di materiale ricamato per il riferimento 2001",
+        "y2005": "Anteprima di dettaglio tessile per il riferimento 2005",
+        "y2011": "Anteprima di ricamo per il riferimento 2011",
+        "y2013": "Anteprima di materiale tessile per il riferimento 2013",
+        "y2015": "Anteprima di dettaglio ricamato per il riferimento 2015",
+        "y2023": "Anteprima tessile per il riferimento 2023",
+        "y2024": "Anteprima di ricamo per il riferimento 2024"
+      }
+    },
+    "values": {
+      "fabrication": {
+        "title": "**PRODUZIONE FRANCESE**",
+        "description": "L'insieme delle nostre produzioni è realizzato nei nostri atelier in Francia, vicino a Lione nella regione Alvernia-Rodano-Alpi, culla storica della tradizione tessile."
+      },
+      "patrimoine": {
+        "title": "**IMPRESA DEL PATRIMONIO VIVENTE**",
+        "description": "Dal 2023, Fil'ing Broderies è fiera di detenere l'etichetta \"Entreprise du Patrimoine Vivant\" (Impresa del Patrimonio Vivente), conferita dalla prefettura della regione Alvernia-Rodano-Alpi."
+      },
+      "valeurs": {
+        "title": "**I NOSTRI VALORI**",
+        "description": "L'implicazione, l'impegno e soprattutto la motivazione di tutti i membri dei team sono preoccupazioni essenziali per la vita della nostra impresa."
+      }
+    }
+  },
+  "creation": {
+    "hero": { "title": "CREAZIONE" },
+    "intro": {
+      "p1": "Sviluppiamo i vostri progetti, che siano da disegni, modelli, file digitali, o semplicemente durante scambi, cercando sempre di essere **il più vicino possibile ai vostri desideri.**",
+      "p2": "Il nostro mestiere, in costante evoluzione, richiede un monitoraggio permanente delle tendenze e delle innovazioni.\nIl nostro **permanente** rimettersi in discussione ci permette di presentarvi soluzioni **innovative** il più vicino possibile alle vostre aspettative.",
+      "p3": "Il nostro dipartimento **Ricerca & Sviluppo** sarà lieto di rispondere a tutte le vostre richieste."
+    },
+    "gallery": {
+      "alt1": "Dettaglio di ricamo multi-tecnica",
+      "alt2": "Campione tessile di creazione",
+      "alt3": "Motivo ricamato in sviluppo",
+      "alt4": "Composizione di materiali e fili",
+      "alt5": "Dettaglio di un lavoro di ricamo",
+      "alt6": "Campione di creazione tessile"
+    },
+    "facts": {
+      "dev": {
+        "title": "**5 POSTAZIONI DI SVILUPPO**",
+        "description": "Per dare vita alle vostre idee"
+      },
+      "couleurs": {
+        "title": "**OLTRE 2000 RIFERIMENTI DI COLORI DI FILO**",
+        "description": "Per offrire un'ampia scelta e rispondere il più vicino possibile al vostro progetto"
+      }
+    }
+  },
+  "production": {
+    "hero": { "title": "PRODUZIONE" },
+    "intro": {
+      "p1": "L'esigenza dei nostri clienti ci obbliga a performare.",
+      "p2": "Dobbiamo garantire una produzione di **qualità** nei tempi, effettuando un controllo qualità a **ogni fase** della catena di produzione e dialogando in permanenza con i siti di produzione."
+    },
+    "gallery": {
+      "alt1": "Dettaglio di materiale trapuntato",
+      "alt2": "Campione di ricamo di produzione",
+      "alt3": "Dettaglio di motivo ricamato",
+      "alt4": "Materiale preparato per la produzione",
+      "alt5": "Controllo visivo di una finitura tessile",
+      "alt6": "Campione tessile finito"
+    },
+    "facts": {
+      "surface": { "title": "**3200m²**", "description": "Di edificio recente" },
+      "preparation": {
+        "title": "**PREPARAZIONE E FINITURA**",
+        "description": "Un polo di preparazione materiale dotato di fessuratrici, lavatrici e presse a caldo, nonché un polo di finitura e controllo qualità"
+      },
+      "tetes": {
+        "title": "**99 TESTE DI RICAMO**",
+        "description": "Divise tra un atelier dedicato al campionario e uno dedicato alla produzione di grandi serie"
+      },
+      "decoupe": {
+        "title": "**3 MACCHINE DI TAGLIO**",
+        "description": "2 taglio laser e 1 tavolo numerico a riconoscimento di forme"
+      }
+    },
+    "finishing": {
+      "p1": "La finitura è il tocco finale **indispensabile** al nostro lavoro per una qualità **irreprensibile**.",
+      "p2": "È un mestiere a sé che richiede un occhio **preciso** e una grande **minuzia** del gesto.\nPunto dopo punto, il nostro atelier applica la cura finale ai vostri prodotti."
+    }
+  },
+  "galerie": {
+    "hero": { "title": "GALLERIA" },
+    "selector": {
+      "label": "Categorie di ricamo",
+      "selectedHint": "Categoria selezionata"
+    },
+    "images": {
+      "placeholder": "{category} — motivo {number}",
+      "sample": "{category} — dettaglio del campione tessile {number}"
+    },
+    "categories": {
+      "traditionnelle": "Tradizionale",
+      "3d": "3D",
+      "cornely": "Cornely",
+      "macrame": "Macramé",
+      "coiling": "Coiling",
+      "perles": "Perle",
+      "multi-techniques": "Multi-tecnica",
+      "sequins": "Sequins",
+      "tuffetage": "Tufting",
+      "smock": "Smock",
+      "matelasse": "Trapuntato",
+      "applications": "Applicazioni",
+      "patchs": "Patch",
+      "all-over": "All-over",
+      "patchwork": "Patchwork",
+      "decoupe": "Taglio",
+      "gros-fil": "Filo spesso"
+    }
+  },
+  "common": {
+    "meta": {
+      "title": "Fil'ing Broderies — Ricamo di lusso dal 1997",
+      "description": "Fil'ing Broderies — Manifattura francese di ricamo di lusso. Creazione e produzione per le grandi maison di lusso e dell'alta gamma."
+    },
+    "skipToContent": "Vai al contenuto",
+    "brand": { "name": "Fil'ing Broderies" },
+    "sectionLabels": {
+      "intro": "Introduzione",
+      "services": "Servizi",
+      "expertise": "Competenza",
+      "timeline": "Timeline — tappe chiave",
+      "values": "I nostri valori",
+      "gallery": "Galleria",
+      "facts": "Cifre chiave",
+      "carousel": "Carosello di immagini",
+      "finishing": "Finitura",
+      "categories": "Categorie di ricamo"
+    },
+    "gallery": {
+      "dialogLabel": "Visualizzatore di immagini",
+      "closeLabel": "Chiudi il visualizzatore di immagini",
+      "openLabel": "Ingrandisci l'immagine"
+    },
+    "carousel": {
+      "regionLabel": "Galleria di immagini scorrevole",
+      "dialogLabel": "Visualizzatore di immagini",
+      "closeLabel": "Chiudi il visualizzatore di immagini",
+      "openLabel": "Ingrandisci l'immagine"
+    },
+    "bigcarousel": {
+      "regionLabel": "Carosello di immagini",
+      "prevLabel": "Immagine precedente",
+      "nextLabel": "Immagine successiva",
+      "goToImage": "Vai all'immagine"
+    },
+    "menu": {
+      "accueil": "Home",
+      "creation": "Creazione",
+      "production": "Produzione",
+      "galerie": "Galleria",
+      "triggerLabel": "Apri il menu di navigazione",
+      "closeLabel": "Chiudi il menu di navigazione",
+      "dialogLabel": "Menu di navigazione"
+    },
+    "language": {
+      "navLabel": "Selettore di lingua",
+      "navLabelWithCurrent": "Selettore di lingua, lingua attuale: {current}",
+      "label": { "fr": "FR", "en": "EN", "it": "IT" },
+      "switchTo": {
+        "fr": "Passa al francese",
+        "en": "Passa all'inglese",
+        "it": "Passa all'italiano"
+      }
+    },
+    "footer": {
+      "contact": "CONTATTO",
+      "trajet": "PERCORSO DA",
+      "gare": "Stazione TGV Lyon Part-Dieu",
+      "aeroport": "Aeroporto e Stazione TGV Lyon Saint-Exupéry",
+      "copyright": "2026 Fil'ing Broderies. © Tutti i diritti riservati. Realizzato da Nicolas ed Emilie.",
+      "sitemapLabel": "Mappa del sito",
+      "aria": {
+        "mail": "Invia un'email a Fil'ing Broderies",
+        "adresse": "Localizza Fil'ing Broderies sulla mappa",
+        "instagram": "Fil'ing Broderies su Instagram (si apre in una nuova scheda)",
+        "linkedin": "Fil'ing Broderies su LinkedIn (si apre in una nuova scheda)",
+        "gare": "Stazione TGV Lyon Part-Dieu",
+        "aeroport": "Aeroporto e Stazione TGV Lyon Saint-Exupéry"
+      }
+    }
+  }
+}

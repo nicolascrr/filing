@@ -1,0 +1,223 @@
+---
+/**
+ * ValueBlock — US-11
+ *
+ * Reusable block: logo emblem on top, then title, then description.
+ * The page supplies the i18n strings (so this component does not call `t()`
+ * itself); title and description may contain `**bold**` markup which is
+ * parsed into `<strong>` tags via `parseBold` (used with `set:html`).
+ *
+ * Responsive (mobile-first): centered on mobile; spacing scales with tokens.
+ * Uses a `<article>` for semantic grouping.
+ */
+
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { parseBold } from '../../i18n/t';
+
+export interface Props {
+  /** Emblem icon displayed at the top. */
+  logo: ImageMetadata;
+  /** Block title (supports `**bold**` markup). */
+  title: string;
+  /** Block description (supports `**bold**` markup). */
+  description: string;
+  /** Internal composition; page-level grids may still arrange multiple blocks. */
+  layout?: 'row' | 'grid-2x2';
+  /** Opt-in treatment for the supplied orange client pictograms. */
+  logoVariant?: 'default' | 'orange';
+  /** Optional layout override class. */
+  class?: string;
+}
+
+const {
+  logo,
+  title,
+  description,
+  layout = 'row',
+  logoVariant = 'default',
+  class: className,
+} = Astro.props;
+const renderedLogoWidth = logoVariant === 'orange' ? logo.width : 128;
+const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
+---
+
+<article
+  class:list={[
+    'value-block text-center',
+    `value-block--${layout}`,
+    `value-block--logo-${logoVariant}`,
+    className,
+  ]}
+>
+  <span class="value-block__logo-frame" aria-hidden="true">
+    <Image
+      src={logo}
+      alt=""
+      role="presentation"
+      width={renderedLogoWidth}
+      height={renderedLogoHeight}
+      class="value-block__logo"
+      loading="lazy"
+    />
+  </span>
+  <div class="value-block__content">
+    <h3
+      class="value-block__title font-[var(--font-heading)] font-semibold"
+      style="font-size: var(--text-xl); color: var(--color-charcoal); text-wrap: balance;"
+      set:html={parseBold(title)}
+    />
+    <p
+      class="value-block__desc"
+      style="font-size: var(--text-base); color: var(--color-text-muted); line-height: 1.7;"
+      set:html={parseBold(description)}
+    />
+  </div>
+</article>
+
+<style>
+  .value-block {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    height: 100%;
+    row-gap: clamp(1rem, 2vw, 1.25rem);
+  }
+
+  .value-block__content {
+    display: grid;
+    justify-items: center;
+    gap: clamp(1rem, 2vw, 1.25rem);
+  }
+
+  .value-block__title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0;
+    line-height: 1.25;
+  }
+
+  .value-block__desc {
+    max-width: 42ch;
+    margin: 0;
+  }
+
+  .value-block__logo-frame {
+    display: grid;
+    place-items: center;
+    width: clamp(6.25rem, 8vw, 7rem);
+    height: clamp(6.25rem, 8vw, 7rem);
+    padding: clamp(0.55rem, 1.2vw, 0.8rem);
+    overflow: visible;
+  }
+
+  .value-block__logo {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 92%;
+    max-height: 92%;
+    object-fit: contain;
+    object-position: center;
+    overflow: visible;
+  }
+
+  .value-block--logo-orange .value-block__logo-frame {
+    width: 9rem;
+    height: 9rem;
+    max-width: 100%;
+    padding: 1rem;
+    overflow: visible;
+    border-radius: 0;
+    mask: none;
+  }
+
+  .value-block--logo-orange {
+    grid-template-rows: 9rem 5.5rem auto;
+    align-content: start;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .value-block--logo-orange .value-block__content {
+    display: contents;
+  }
+
+  .value-block--logo-orange .value-block__title {
+    width: 100%;
+    grid-row: 2;
+    min-height: 5.5rem;
+    padding-top: 0.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .value-block--logo-orange .value-block__desc {
+    grid-row: 3;
+    width: 100%;
+    max-width: 42ch;
+    text-align: center;
+  }
+
+  .value-block--logo-orange .value-block__logo {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    overflow: visible;
+    border-radius: 0;
+    clip-path: none;
+    mask: none;
+  }
+
+  @media (min-width: 768px) {
+    .value-block--row {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      justify-items: start;
+      text-align: left;
+    }
+
+    .value-block--row .value-block__content {
+      justify-items: start;
+    }
+
+    .value-block--row .value-block__title {
+      justify-content: flex-start;
+    }
+
+    .value-block--grid-2x2 {
+      grid-template-columns: minmax(6.25rem, auto) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .value-block--grid-2x2 .value-block__content {
+      grid-template-rows: minmax(2.5em, auto) 1fr;
+      align-self: stretch;
+    }
+
+    .value-block--grid-2x2 .value-block__title {
+      min-height: 2.5em;
+    }
+
+    .value-block--logo-orange {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 9rem 5.5rem auto;
+      align-items: start;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .value-block--logo-orange .value-block__content {
+      display: contents;
+    }
+
+    .value-block--logo-orange .value-block__title {
+      justify-content: center;
+    }
+  }
+</style>

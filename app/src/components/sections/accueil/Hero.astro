@@ -1,0 +1,236 @@
+---
+/**
+ * Hero (Accueil) — US-12
+ *
+ * Headerless, fullscreen hero with a looping background video. Breaks out
+ * of `--content-max` (full-width, full-bleed).
+ *
+ * Video:
+ *   The real V1 MP4 lives at `public/hero-video.mp4` and is served as
+ *   `/hero-video.mp4`. The imported poster remains the visual fallback when
+ *   playback is unavailable.
+ *
+ * Overlay layout:
+ *   - Logo top-center (Astro `<Image>`).
+ *   - Menu trigger top-right (already fixed by BaseLayout — not re-added).
+ *   - A compact home-only language selector at top-left.
+ *   - Tagline centered near the bottom (real text in the DOM, from i18n).
+ *
+ * Responsive (mobile-first):
+ *   - Video fills with `object-fit: cover`.
+ *   - Logo and tagline scale down on mobile via fluid sizing.
+ *   - The home language selector remains clear of the centred logo on mobile.
+ *
+ * Accessibility:
+ *   - The video is decorative: `aria-hidden="true"`, `tabindex="-1"`, muted,
+ *     `playsinline`. It is NOT a focus trap.
+ *   - The tagline is real text in the DOM (screen-reader accessible).
+ *   - A dark gradient scrim ensures white text/logo stay legible.
+ */
+
+import { Image } from 'astro:assets';
+import logo from '../../../assets/placeholders/logo.svg';
+import LanguageSwitcher from '../../chrome/LanguageSwitcher.astro';
+// ffmpeg is not available in the project environment. This supplied client
+// photograph is therefore used as the honest, real-image poster fallback.
+import heroPoster from '../../../content/Médias/Showroom/Broderie/Traditionnelle/P1000499.JPG';
+
+const t = Astro.locals.t;
+const tagline = t('accueil.hero.tagline');
+---
+
+<section class="hero" aria-label={tagline}>
+  <!-- Background video (decorative) with a poster fallback. -->
+  <video
+    class="hero__video"
+    muted
+    loop
+    playsinline
+    preload="metadata"
+    poster={heroPoster.src}
+    aria-hidden="true"
+    tabindex="-1"
+  >
+    <source src="/hero-video.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Dark gradient scrim for legibility of white text/logo. -->
+  <div class="hero__scrim" aria-hidden="true"></div>
+
+  <div class="hero__languages">
+    <LanguageSwitcher class="hero__language-switcher" />
+  </div>
+
+  <!-- Logo: top-center. -->
+  <div class="hero__logo">
+    <Image
+      src={logo}
+      alt={t('common.brand.name')}
+      width={220}
+      height={80}
+      loading="eager"
+      class="hero__logo-img"
+    />
+  </div>
+
+  <!-- Tagline: centered near the bottom. `data-split` opts it into the
+       SplitText char reveal (US-23); above-the-fold, so it plays on load.
+       This is the home page's single <h1> (per accessibility: one h1/page). -->
+  <h1 class="hero__tagline" data-split>
+    {tagline}
+  </h1>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+    background: var(--color-charcoal); /* fallback behind poster/video */
+  }
+
+  .hero__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.15) 35%,
+      rgba(0, 0, 0, 0.35) 75%,
+      rgba(0, 0, 0, 0.65) 100%
+    );
+  }
+
+  /* ---- Logo (top-center) ---- */
+  .hero__logo {
+    position: absolute;
+    top: var(--content-padding);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+  }
+
+  .hero__logo-img {
+    width: clamp(140px, 30vw, 220px);
+    height: auto;
+    filter: brightness(0) invert(1);
+  }
+
+  .hero__languages {
+    position: absolute;
+    top: var(--content-padding);
+    left: var(--content-padding);
+    z-index: 3;
+  }
+
+  .hero__language-switcher :global(.lang-switcher__list) {
+    height: 44px;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .hero__language-switcher :global(.lang-switcher__btn) {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    color: var(--color-warm-white);
+  }
+
+  .hero__language-switcher :global(.lang-switcher__flag) {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .hero__language-switcher :global(.lang-switcher__btn[aria-pressed='true']) {
+    box-shadow: none;
+    opacity: 1;
+  }
+
+  @media (max-width: 639px) {
+    .hero__logo {
+      top: calc(var(--content-padding) + 3.5rem);
+    }
+  }
+
+  /* ---- Tagline (bottom-center) ---- */
+  .hero__tagline {
+    position: absolute;
+    bottom: clamp(2rem, 8vh, 5rem);
+    left: 0;
+    right: 0;
+    z-index: 2;
+    margin: 0;
+    padding: 0 var(--content-padding);
+    text-align: center;
+    color: #fff;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    font-size: clamp(0.875rem, 1.5vw, 1.25rem);
+    letter-spacing: clamp(0.18em, 0.4vw, 0.32em);
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  @supports (height: 100svh) {
+    .hero {
+      height: 100svh;
+      min-height: 100svh;
+    }
+  }
+</style>
+
+<script>
+  let cleanup: (() => void) | null = null;
+
+  function initHeroVideo(): void {
+    cleanup?.();
+    cleanup = null;
+
+    const video = document.querySelector<HTMLVideoElement>('.hero__video');
+    if (!video) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncPlayback = (): void => {
+      if (reducedMotion.matches) {
+        video.pause();
+        video.currentTime = 0;
+        return;
+      }
+
+      void video.play().catch(() => {
+        // Autoplay can still be rejected by a browser policy; the poster stays visible.
+      });
+    };
+
+    syncPlayback();
+    reducedMotion.addEventListener('change', syncPlayback);
+    cleanup = () => {
+      reducedMotion.removeEventListener('change', syncPlayback);
+      video.pause();
+    };
+  }
+
+  document.addEventListener('astro:page-load', initHeroVideo);
+  document.addEventListener('astro:before-swap', () => {
+    cleanup?.();
+    cleanup = null;
+  });
+</script>

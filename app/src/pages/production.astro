@@ -1,0 +1,234 @@
+---
+/**
+ * Production page — US-16
+ *
+ * Composes the Production page using BaseLayout. All visible text comes
+ * from i18n `t()`; all images are imported from `src/assets/placeholders/`.
+ *
+ * Section order:
+ *   1. Page hero (image, headerless) — full-width, breaks `--content-max`.
+ *   2. Intro — 2 centered paragraphs (bold segments parsed).
+ *   3. GridGallery — irregular masonry of the 6 placeholder gallery images.
+ *   4. Facts — 4 ValueBlocks in a 2×2 grid (stacked on mobile).
+ *   5. SmallCarousel — horizontal strip of the 6 placeholder gallery images.
+ *   6. Finishing — 2 centered paragraphs (bold segments parsed).
+ *
+ * Footer is rendered by BaseLayout — not re-added here.
+ *
+ * `--content-max` is respected on every section EXCEPT the full-width hero.
+ * Vertical rhythm uses `--space-section`.
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { parseBold } from '../i18n/t';
+import type { GalleryImage } from '../components/ui/GridGallery.astro';
+import Hero from '../components/sections/PageHero.astro';
+import GridGallery from '../components/ui/GridGallery.astro';
+import ValueBlock from '../components/ui/ValueBlock.astro';
+import SmallCarousel from '../components/ui/SmallCarousel.astro';
+
+import pageHeroProduction from '../content/Médias/Showroom/Broderie/Matelassé/P1001005.JPG';
+// ValueBlock logos — real pictos from src/content/Pictos/ (V2-01).
+import iconSurface from '../content/Pictos/superficie.png';
+import iconPreparation from '../content/Pictos/finition.png';
+import iconTetes from '../content/Pictos/tete_machine.png';
+import iconDecoupe from '../content/Pictos/decoupe.png';
+
+import gallery11 from '../content/Médias/Showroom/Broderie/Matelassé/DSC_0278.JPG';
+import gallery169 from '../content/Médias/Showroom/Broderie/Matelassé/DSC_0283.JPG';
+import gallery23 from '../content/Médias/Showroom/Broderie/Matelassé/DSC_0349.JPG';
+import gallery32 from '../content/Médias/Showroom/Broderie/Matelassé/DSC_0350.JPG';
+import gallery34 from '../content/Médias/Showroom/Broderie/Matelassé/IMG_8744.JPG';
+import gallery43 from '../content/Médias/Showroom/Broderie/Matelassé/P1000872.JPG';
+
+const t = Astro.locals.t;
+
+// GridGallery images — varied colSpan/rowSpan hints drive the desktop mosaic.
+// Alt descriptions are localized with the page.
+const galleryImages: GalleryImage[] = [
+  {
+    src: gallery11,
+    alt: t('production.gallery.alt1'),
+    colSpan: 2,
+    rowSpan: 2,
+  },
+  {
+    src: gallery169,
+    alt: t('production.gallery.alt2'),
+    colSpan: 2,
+    rowSpan: 1,
+  },
+  { src: gallery23, alt: t('production.gallery.alt3'), colSpan: 1, rowSpan: 2 },
+  {
+    src: gallery32,
+    alt: t('production.gallery.alt4'),
+    colSpan: 2,
+    rowSpan: 1,
+  },
+  {
+    src: gallery34,
+    alt: t('production.gallery.alt5'),
+    colSpan: 1,
+    rowSpan: 2,
+  },
+  { src: gallery43, alt: t('production.gallery.alt6'), colSpan: 2, rowSpan: 1 },
+];
+
+// SmallCarousel images — same set, descriptive French alts.
+const carouselImages = galleryImages.map((img) => ({ src: img.src, alt: img.alt }));
+---
+
+<BaseLayout title={`${t('production.hero.title')} — ${t('common.brand.name')}`}>
+  <!-- 1. Page hero (image, headerless) — full-width, breaks content-max -->
+  <Hero image={pageHeroProduction} title={t('production.hero.title')} />
+
+  <!-- 2. Intro — 2 centered paragraphs with bold segments -->
+  <section class="content-max section-intro" aria-label={t('common.sectionLabels.intro')}>
+    <div class="section-intro__inner" data-reveal>
+      <p class="section-intro__p" set:html={parseBold(t('production.intro.p1'))} />
+      <p class="section-intro__p" set:html={parseBold(t('production.intro.p2'))} />
+    </div>
+  </section>
+
+  <!-- 3. GridGallery — wide irregular masonry, fade reveal -->
+  <section
+    class="section-gallery section-gallery--wide"
+    aria-label={t('common.sectionLabels.gallery')}
+    data-reveal
+  >
+    <GridGallery images={galleryImages} animation="fade" />
+  </section>
+
+  <!-- 4. Facts — 4 ValueBlocks in a 2×2 grid (stacked on mobile) -->
+  <section class="content-max section-facts" aria-label={t('common.sectionLabels.facts')}>
+    <h2 class="sr-only">{t('common.sectionLabels.facts')}</h2>
+    <div class="section-facts__grid">
+      <div data-reveal data-reveal-delay="0">
+        <ValueBlock
+          logo={iconSurface}
+          logoVariant="orange"
+          title={t('production.facts.surface.title')}
+          description={t('production.facts.surface.description')}
+        />
+      </div>
+      <div data-reveal data-reveal-delay="0.08">
+        <ValueBlock
+          logo={iconPreparation}
+          logoVariant="orange"
+          title={t('production.facts.preparation.title')}
+          description={t('production.facts.preparation.description')}
+        />
+      </div>
+      <div data-reveal data-reveal-delay="0.16">
+        <ValueBlock
+          logo={iconTetes}
+          logoVariant="orange"
+          title={t('production.facts.tetes.title')}
+          description={t('production.facts.tetes.description')}
+        />
+      </div>
+      <div data-reveal data-reveal-delay="0.24">
+        <ValueBlock
+          logo={iconDecoupe}
+          logoVariant="orange"
+          title={t('production.facts.decoupe.title')}
+          description={t('production.facts.decoupe.description')}
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. SmallCarousel — horizontal scrollable strip -->
+  <section
+    class="section-carousel section-carousel--wide"
+    aria-label={t('common.sectionLabels.carousel')}
+    data-reveal
+  >
+    <SmallCarousel images={carouselImages} />
+  </section>
+
+  <!-- 6. Finishing — 2 centered paragraphs with bold segments -->
+  <section class="content-max section-finishing" aria-label={t('common.sectionLabels.finishing')}>
+    <div class="section-finishing__inner" data-reveal>
+      <p class="section-finishing__p" set:html={parseBold(t('production.finishing.p1'))} />
+      <p class="section-finishing__p" set:html={parseBold(t('production.finishing.p2'))} />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* ---- Shared section rhythm ---- */
+  .section-intro,
+  .section-gallery,
+  .section-facts,
+  .section-carousel,
+  .section-finishing {
+    padding-block: var(--space-section);
+  }
+
+  /* Galleries deliberately extend beyond the standard editorial measure. */
+  .section-gallery--wide,
+  .section-carousel--wide {
+    width: 100%;
+    padding-inline: var(--content-padding);
+  }
+
+  /* ---- Intro ---- */
+  .section-intro__inner {
+    max-width: 60ch;
+    margin-inline: auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .section-intro__p {
+    font-size: var(--text-lg);
+    line-height: 1.8;
+    color: var(--color-charcoal);
+    text-wrap: pretty;
+  }
+
+  .section-intro__p :global(strong) {
+    font-weight: 600;
+    color: var(--color-charcoal);
+  }
+
+  /* ---- Facts (2×2 grid, stacked on mobile) ---- */
+  .section-facts__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-component);
+  }
+
+  @media (min-width: 768px) {
+    .section-facts__grid {
+      grid-template-columns: repeat(2, 1fr);
+      align-items: start;
+    }
+  }
+
+  /* ---- Finishing ---- */
+  .section-finishing__inner {
+    max-width: 60ch;
+    margin-inline: auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .section-finishing__p {
+    font-size: var(--text-lg);
+    line-height: 1.8;
+    color: var(--color-charcoal);
+    text-wrap: pretty;
+    white-space: pre-line; /* preserve the `\n` in finishing.p2 */
+  }
+
+  .section-finishing__p :global(strong) {
+    font-weight: 600;
+    color: var(--color-charcoal);
+  }
+</style>

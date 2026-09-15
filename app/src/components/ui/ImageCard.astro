@@ -1,0 +1,98 @@
+---
+/**
+ * ImageCard — US-09
+ *
+ * Borderless, rounded image card that navigates to a page.
+ * The title is displayed in white at the bottom-left corner over a subtle
+ * gradient scrim for readability. A gentle hover animation scales the image
+ * and deepens the scrim (opacity/transform only, per AGENTS.md).
+ *
+ * Responsive (mobile-first): the card is full-width; the parent grid controls
+ * how many cards sit side by side. Aspect ratio is preserved via `aspect-[4/3]`.
+ */
+
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+export interface Props {
+  /** Card title — displayed white, bottom-left corner. */
+  title: string;
+  /** Card image (imported asset). */
+  image: ImageMetadata;
+  /** Link target. */
+  href: string;
+  /** Optional layout override class. */
+  class?: string;
+}
+
+const { title, image, href, class: className } = Astro.props;
+---
+
+<a
+  href={href}
+  aria-label={title}
+  class:list={[
+    'image-card group block relative w-full overflow-hidden',
+    'rounded-[var(--radius-md)]',
+    'aspect-[4/3]',
+    className,
+  ]}
+>
+  <figure class="relative h-full w-full">
+    <Image
+      src={image}
+      alt={title}
+      widths={[400, 800, 1200]}
+      sizes="(max-width: 768px) 100vw, 50vw"
+      class="image-card__img h-full w-full object-cover"
+      loading="lazy"
+    />
+    <!-- Gradient scrim for title readability -->
+    <div class="image-card__scrim pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <figcaption class="image-card__caption absolute bottom-0 left-0 p-4 sm:p-5 md:p-6 text-white">
+      <span
+        class="block font-[var(--font-heading)] font-medium tracking-wide"
+        style="font-size: var(--text-lg); text-wrap: balance;"
+      >
+        {title}
+      </span>
+    </figcaption>
+  </figure>
+</a>
+
+<style>
+  .image-card__img {
+    transition:
+      transform var(--duration-base) var(--ease-luxury),
+      filter var(--duration-base) var(--ease-luxury);
+    will-change: transform;
+  }
+
+  .image-card__scrim {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.25) 35%,
+      rgba(0, 0, 0, 0) 65%
+    );
+    transition: opacity var(--duration-base) var(--ease-luxury);
+    opacity: 0.85;
+  }
+
+  .image-card:hover .image-card__img,
+  .image-card:focus-visible .image-card__img {
+    transform: scale(1.03);
+  }
+
+  .image-card:hover .image-card__scrim,
+  .image-card:focus-visible .image-card__scrim {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .image-card__img,
+    .image-card__scrim {
+      transition: none;
+    }
+  }
+</style>

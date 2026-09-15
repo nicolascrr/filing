@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-label="Image card Création placeholder">
+  <title>Image card Création placeholder</title>
+  <defs>
+    <linearGradient id="icc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3eee2"/>
+      <stop offset="1" stop-color="#e6dcc6"/>
+    </linearGradient>
+    <pattern id="iccp" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="22" stroke="#b8a069" stroke-width="0.5" stroke-opacity="0.14"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="600" fill="url(#icc)"/>
+  <rect width="800" height="600" fill="url(#iccp)"/>
+  <g transform="translate(400 300)" text-anchor="middle" font-family="'Poppins','Helvetica Neue',Arial,sans-serif">
+    <text font-size="22" font-weight="500" letter-spacing="8" fill="#2b2b2b" fill-opacity="0.55">CRÉATION</text>
+    <line x1="-32" y1="22" x2="32" y2="22" stroke="#b8a069" stroke-width="1" stroke-opacity="0.6"/>
+  </g>
+</svg>

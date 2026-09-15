@@ -1,0 +1,936 @@
+---
+/**
+ * Menu — custom spool/thread navigation.
+ *
+ * Adapts the supplied standalone SVG + Web Animations demo while keeping the
+ * site's i18n labels, language switcher behavior and Astro view-transition
+ * lifecycle cleanup.
+ */
+import { navItems } from '../../data/nav';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+const t = Astro.locals.t;
+const triggerLabel = t('common.menu.triggerLabel');
+const closeLabel = t('common.menu.closeLabel');
+const dialogLabel = t('common.menu.dialogLabel');
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+const menuRowStart = 96;
+const menuRowStep = 62;
+const menuInnerBottom = 438;
+const menuLanguageTarget = 25;
+const menuLastSeparator = menuRowStart + menuRowStep * 4;
+const menuLanguageTop =
+  menuLastSeparator + (menuInnerBottom - menuLastSeparator - menuLanguageTarget) / 2;
+---
+
+<div class="nav-block" data-thread-menu>
+  <button
+    type="button"
+    class="icon-frame"
+    id="iconFrame"
+    data-menu-trigger
+    aria-expanded="false"
+    aria-controls="threadStage"
+    aria-label={triggerLabel}
+    data-label-open={triggerLabel}
+    data-label-close={closeLabel}
+  >
+    <svg
+      class="spool-icon"
+      id="spoolIcon"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 56 56"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <ellipse cx="28" cy="10" rx="16" ry="5"></ellipse>
+      <ellipse cx="28" cy="46" rx="16" ry="5"></ellipse>
+      <path d="M12 10 L12 46"></path>
+      <path d="M44 10 L44 46"></path>
+      <path d="M15 20 L41 30"></path>
+      <path d="M15 30 L41 20"></path>
+      <path d="M44 39 C52 43,54 49,48 53" stroke-width="1.8"></path>
+      <circle cx="48.5" cy="53.5" r="1.8" fill="currentColor" stroke="none"></circle>
+    </svg>
+  </button>
+
+  <div
+    class="thread-stage"
+    id="threadStage"
+    data-thread-stage
+    role="dialog"
+    aria-modal="true"
+    aria-label={dialogLabel}
+    aria-hidden="true"
+    style={`--menu-language-top: ${menuLanguageTop}px;`}
+  >
+    <svg
+      class="thread-svg"
+      id="threadMenu"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 320 460"
+      overflow="visible"
+      aria-hidden="false"
+    >
+      <defs>
+        <linearGradient
+          id="clothGradient"
+          x1="24"
+          y1="62"
+          x2="296"
+          y2="438"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0" stop-color="var(--color-footer)"></stop>
+          <stop offset="0.52" stop-color="#383532"></stop>
+          <stop offset="1" stop-color="#242321"></stop>
+        </linearGradient>
+        <filter id="clothTexture" x="0" y="0" width="100%" height="100%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.92"
+            numOctaves="2"
+            seed="8"
+            result="noise"></feTurbulence>
+          <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0.08"></feFuncA>
+          </feComponentTransfer>
+        </filter>
+        <filter id="softShadow" x="-20%" y="-10%" width="140%" height="130%">
+          <feDropShadow dx="0" dy="14" stdDeviation="13" flood-color="#2b2b2b" flood-opacity="0.18"
+          ></feDropShadow>
+        </filter>
+      </defs>
+
+      <!--
+        The filament and panel outline retain their original independent draw.
+        A closed, stroke-free underlay fills the narrow raccord between them.
+      -->
+      <path id="leadingThread" data-leading-thread d="M298 2V34C298 50 296 58 290 62"></path>
+      <path
+        id="menuFill"
+        data-menu-fill
+        d="M290 62H52Q30 62 30 84V416Q30 438 52 438H268Q290 438 290 416V62Z"
+      ></path>
+      <path
+        id="textureFill"
+        data-texture-fill
+        d="M290 62H52Q30 62 30 84V416Q30 438 52 438H268Q290 438 290 416V62Z"
+      ></path>
+      <path
+        id="menuOutline"
+        data-menu-outline
+        d="M290 62H52Q30 62 30 84V416Q30 438 52 438H268Q290 438 290 416V62Z"
+      ></path>
+      <path id="topStitch" data-top-stitch d={`M56 ${menuRowStart}H264`}></path>
+      <g id="menuSeparators" data-menu-separators>
+        {
+          Array.from({ length: 4 }, (_, index) => {
+            const y = menuRowStart + menuRowStep * (index + 1);
+            return <path class="separator" data-separator d={`M56 ${y}H264`}></path>;
+          })
+        }
+      </g>
+
+      <g id="menuItems" data-menu-items>
+        {
+          navItems.map((item, index) => {
+            const href = item.href;
+            const label = t(item.labelKey);
+            const isActive = (href.replace(/\/$/, '') || '/') === currentPath;
+            const rowTop = menuRowStart + menuRowStep * index;
+            const y = rowTop + menuRowStep / 2;
+            return (
+              <a
+                class:list={['svg-link', isActive && 'svg-link--active']}
+                href={href}
+                aria-label={label}
+                aria-current={isActive ? 'page' : undefined}
+                data-menu-link
+              >
+                <title>{label}</title>
+                <rect x="48" y={rowTop} width="224" height={menuRowStep} fill="transparent"
+                ></rect>
+                <text x="160" y={y} text-anchor="middle">
+                  {label}
+                </text>
+              </a>
+            );
+          })
+        }
+      </g>
+    </svg>
+    <div class="menu__language-panel" data-menu-language-panel>
+      <LanguageSwitcher class="menu__languages" />
+    </div>
+  </div>
+</div>
+
+<style>
+  .nav-block {
+    position: fixed;
+    top: var(--content-padding);
+    right: var(--content-padding);
+    z-index: 92;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: min(340px, calc(100vw - 2 * var(--content-padding)));
+    color: var(--color-brand-orange);
+    pointer-events: none;
+  }
+
+  .nav-block[data-on-dark='true'] {
+    color: var(--color-warm-white);
+  }
+
+  .nav-block[data-lightbox-blocked='true'] {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .menu__language-panel {
+    position: absolute;
+    left: 50%;
+    right: auto;
+    top: var(--menu-language-top);
+    bottom: auto;
+    z-index: 6;
+    width: max-content;
+    color: inherit;
+    opacity: 0;
+    transform: translate(-50%, 10px);
+    pointer-events: none;
+  }
+
+  :global(.menu__languages .lang-switcher__list) {
+    height: 25px;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    line-height: 0;
+  }
+
+  :global(.menu__languages .lang-switcher__item) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    flex: 0 0 25px;
+    line-height: 0;
+  }
+
+  :global(.menu__languages .lang-switcher__btn) {
+    width: 25px;
+    height: 25px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    flex: 0 0 25px;
+    line-height: 0;
+    vertical-align: top;
+  }
+
+  :global(.menu__languages .lang-switcher__flag) {
+    display: block;
+    width: 25px !important;
+    height: 25px !important;
+    min-width: 25px;
+    min-height: 25px;
+    max-width: 25px;
+    max-height: 25px;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .icon-frame {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    pointer-events: auto;
+  }
+
+  .icon-frame:hover,
+  .icon-frame:focus-visible {
+    color: var(--color-brand-orange);
+  }
+
+  .nav-block[data-on-dark='true'] .icon-frame:hover,
+  .nav-block[data-on-dark='true'] .icon-frame:focus-visible {
+    color: var(--color-warm-white);
+  }
+
+  .spool-icon {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .thread-stage {
+    position: relative;
+    align-self: flex-end;
+    width: 320px;
+    height: 460px;
+    margin-top: -4px;
+    overflow: visible;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scaleY(0);
+    transform-origin: top center;
+  }
+
+  .thread-stage[aria-hidden='false'] {
+    pointer-events: auto;
+  }
+
+  .thread-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  #leadingThread,
+  #menuOutline,
+  #topStitch,
+  .separator {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  #leadingThread,
+  #menuOutline {
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-opacity: 0.86;
+  }
+
+  #topStitch {
+    stroke: var(--color-brand-orange);
+    stroke-width: 1;
+    stroke-opacity: 0.42;
+  }
+
+  #menuFill {
+    fill: url('#clothGradient');
+    filter: url('#softShadow');
+    opacity: 0;
+  }
+
+  #textureFill {
+    fill: var(--color-footer);
+    filter: url('#clothTexture');
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .separator {
+    stroke: var(--color-brand-orange);
+    stroke-width: 1;
+    stroke-opacity: 0.42;
+  }
+
+  #menuSeparators {
+    opacity: 0;
+  }
+
+  #menuItems {
+    opacity: 0;
+  }
+
+  .svg-link {
+    color: var(--color-warm-white);
+    text-decoration: none;
+  }
+
+  .svg-link text {
+    font-family: var(--font-heading);
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: 0.6px;
+    fill: currentColor;
+    text-transform: uppercase;
+    dominant-baseline: middle;
+    transition: fill var(--duration-base) var(--ease-luxury);
+  }
+
+  .svg-link:hover,
+  .svg-link:focus-visible,
+  .svg-link--active {
+    color: var(--color-brand-orange);
+    outline: none;
+  }
+
+  .svg-link:focus-visible text {
+    stroke: color-mix(in srgb, var(--color-gold) 26%, transparent);
+    stroke-width: 0.6;
+    paint-order: stroke fill;
+  }
+
+  @media (max-width: 639px) {
+    .nav-block {
+      width: min(327px, calc(100vw - 2 * var(--content-padding)));
+    }
+
+    .thread-stage {
+      align-self: flex-end;
+      max-width: calc(100vw - 2 * var(--content-padding));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spool-icon,
+    .svg-link text {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../scripts/gsap';
+
+  type MenuElements = {
+    root: HTMLElement;
+    iconFrame: HTMLButtonElement;
+    spoolIcon: SVGElement;
+    stage: HTMLElement;
+    leadingThread: SVGPathElement;
+    menuOutline: SVGPathElement;
+    topStitch: SVGPathElement;
+    menuFill: SVGPathElement;
+    textureFill: SVGPathElement;
+    menuSeparators: SVGGElement;
+    menuItems: SVGGElement;
+    menuLanguagePanel: HTMLElement;
+    links: SVGElement[];
+  };
+
+  const menuCleanups: Array<() => void> = [];
+
+  function getElements(navBlock: HTMLElement): MenuElements | null {
+    const iconFrame = navBlock.querySelector<HTMLButtonElement>('#iconFrame');
+    const spoolIcon = navBlock.querySelector<SVGElement>('#spoolIcon');
+    const stage = navBlock.querySelector<HTMLElement>('#threadStage');
+    const leadingThread = navBlock.querySelector<SVGPathElement>('#leadingThread');
+    const menuOutline = navBlock.querySelector<SVGPathElement>('#menuOutline');
+    const topStitch = navBlock.querySelector<SVGPathElement>('#topStitch');
+    const menuFill = navBlock.querySelector<SVGPathElement>('#menuFill');
+    const textureFill = navBlock.querySelector<SVGPathElement>('#textureFill');
+    const menuSeparators = navBlock.querySelector<SVGGElement>('#menuSeparators');
+    const menuItems = navBlock.querySelector<SVGGElement>('#menuItems');
+    const menuLanguagePanel = navBlock.querySelector<HTMLElement>('[data-menu-language-panel]');
+    if (
+      !iconFrame ||
+      !spoolIcon ||
+      !stage ||
+      !leadingThread ||
+      !menuOutline ||
+      !topStitch ||
+      !menuFill ||
+      !textureFill ||
+      !menuSeparators ||
+      !menuItems ||
+      !menuLanguagePanel
+    )
+      return null;
+
+    return {
+      root: navBlock,
+      iconFrame,
+      spoolIcon,
+      stage,
+      leadingThread,
+      menuOutline,
+      topStitch,
+      menuFill,
+      textureFill,
+      menuSeparators,
+      menuItems,
+      menuLanguagePanel,
+      links: Array.from(navBlock.querySelectorAll<SVGElement>('[data-menu-link]')),
+    };
+  }
+
+  function prepareStroke(path: SVGPathElement): number {
+    const length = path.getTotalLength();
+    path.style.strokeDasharray = String(length);
+    path.style.strokeDashoffset = String(length);
+    return length;
+  }
+
+  function initThreadMenu(navBlock: HTMLElement): () => void {
+    if (navBlock.dataset.bound === 'true') return () => undefined;
+    const elements = getElements(navBlock);
+    if (!elements) return () => undefined;
+    navBlock.dataset.bound = 'true';
+
+    const {
+      iconFrame,
+      spoolIcon,
+      stage,
+      leadingThread,
+      menuOutline,
+      topStitch,
+      menuFill,
+      textureFill,
+      menuSeparators,
+      menuItems,
+      menuLanguagePanel,
+      links,
+    } = elements;
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const openHeight = 460;
+    const animationContext = gsap.context(() => undefined, navBlock);
+    const activeAnimations = new Set<gsap.core.Tween>();
+    const leadingLength = prepareStroke(leadingThread);
+    const outlineLength = prepareStroke(menuOutline);
+    const stitchLength = prepareStroke(topStitch);
+    let isOpen = false;
+    let isAnimating = false;
+    let isClosing = false;
+    let animationRunId = 0;
+    let contrastFrame = 0;
+
+    const getReducedMotion = (): boolean => reducedMotionQuery.matches;
+    const cancelRunningAnimations = (): void => {
+      activeAnimations.forEach((animation) => animation.kill());
+      activeAnimations.clear();
+    };
+    const getFocusableElements = (): Array<HTMLElement | SVGElement> => {
+      const focusableSelector = [
+        'a[href]',
+        'button:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(',');
+
+      return Array.from(
+        elements.root.querySelectorAll<HTMLElement | SVGElement>(focusableSelector),
+      ).filter((element) => {
+        if (element.hasAttribute('disabled') || element.getAttribute('aria-hidden') === 'true')
+          return false;
+        if (element instanceof HTMLElement)
+          return element.offsetParent !== null || element === iconFrame;
+        return element.getClientRects().length > 0;
+      });
+    };
+    const isCurrentAnimationRun = (runId: number): boolean => runId === animationRunId && isOpen;
+    const resolveEase = (easing: string): string => {
+      if (easing === 'ease-in') return 'power2.in';
+      if (easing === 'ease-out') return 'power2.out';
+      if (easing.includes('.22,1,.36,1')) return 'power3.out';
+      if (easing.includes('.55,0,1,.45')) return 'power2.in';
+      return 'power2.inOut';
+    };
+    const animateElement = (
+      element: Element,
+      keyframes: Array<Record<string, string | number>>,
+      options: { duration: number; easing: string },
+    ): Promise<void> => {
+      const first = keyframes[0] ?? {};
+      const last = keyframes.at(-1) ?? {};
+      return new Promise((resolve) => {
+        let tween: gsap.core.Tween | null = null;
+        animationContext.add(() => {
+          tween = gsap.fromTo(element, first, {
+            ...last,
+            duration: options.duration / 1000,
+            ease: resolveEase(options.easing),
+            overwrite: 'auto',
+            onComplete: () => {
+              if (tween) activeAnimations.delete(tween);
+              resolve();
+            },
+            onInterrupt: () => {
+              if (tween) activeAnimations.delete(tween);
+              resolve();
+            },
+          });
+        });
+        if (tween) activeAnimations.add(tween);
+      });
+    };
+    const rotateSpool = async (degrees: number, duration: number): Promise<void> => {
+      const currentTransform = spoolIcon.style.transform || 'rotate(0deg)';
+      await animateElement(
+        spoolIcon,
+        [{ transform: currentTransform }, { transform: `rotate(${degrees}deg)` }],
+        {
+          duration: getReducedMotion() ? 1 : duration,
+          easing: 'cubic-bezier(.65,0,.35,1)',
+        },
+      );
+      spoolIcon.style.transform = `rotate(${degrees}deg)`;
+    };
+    const drawPath = async (
+      path: SVGPathElement,
+      length: number,
+      duration: number,
+      easing: string,
+    ): Promise<void> => {
+      await animateElement(path, [{ strokeDashoffset: length }, { strokeDashoffset: 0 }], {
+        duration: getReducedMotion() ? 1 : duration,
+        easing,
+      });
+      path.style.strokeDashoffset = '0';
+    };
+    const erasePath = async (
+      path: SVGPathElement,
+      length: number,
+      duration: number,
+      easing: string,
+    ): Promise<void> => {
+      await animateElement(path, [{ strokeDashoffset: 0 }, { strokeDashoffset: length }], {
+        duration: getReducedMotion() ? 1 : duration,
+        easing,
+      });
+      path.style.strokeDashoffset = String(length);
+    };
+    const setOpenA11y = (): void => {
+      iconFrame.setAttribute('aria-expanded', 'true');
+      iconFrame.setAttribute('aria-label', iconFrame.dataset.labelClose ?? '');
+      stage.setAttribute('aria-hidden', 'false');
+    };
+    const setClosedA11y = (): void => {
+      iconFrame.setAttribute('aria-expanded', 'false');
+      iconFrame.setAttribute('aria-label', iconFrame.dataset.labelOpen ?? '');
+      stage.setAttribute('aria-hidden', 'true');
+    };
+    const focusFirstLink = (): void => {
+      links[0]?.focus({ preventScroll: true });
+    };
+    const resetClosedStyles = (): void => {
+      stage.style.height = `${openHeight}px`;
+      stage.style.visibility = 'hidden';
+      stage.style.opacity = '0';
+      stage.style.transform = 'scaleY(0)';
+      menuItems.style.opacity = '0';
+      menuItems.style.transform = 'translateY(18px)';
+      menuSeparators.style.opacity = '0';
+      menuLanguagePanel.style.opacity = '0';
+      menuLanguagePanel.style.transform = 'translate(-50%, 10px)';
+      menuLanguagePanel.style.pointerEvents = 'none';
+      menuFill.style.opacity = '0';
+      textureFill.style.opacity = '0';
+      leadingThread.style.strokeDashoffset = String(leadingLength);
+      menuOutline.style.strokeDashoffset = String(outlineLength);
+      topStitch.style.strokeDashoffset = String(stitchLength);
+      spoolIcon.style.transform = 'rotate(0deg)';
+      isClosing = false;
+      setClosedA11y();
+    };
+
+    const openMenu = async (): Promise<void> => {
+      if (isOpen || isAnimating) return;
+      const runId = ++animationRunId;
+      isOpen = true;
+      isAnimating = true;
+      isClosing = false;
+      setOpenA11y();
+      stage.style.visibility = 'visible';
+      await rotateSpool(90, 360);
+      if (!isCurrentAnimationRun(runId)) return;
+      await animateElement(
+        stage,
+        [
+          { opacity: 0, transform: 'scaleY(0)' },
+          { opacity: 1, transform: 'scaleY(1)' },
+        ],
+        {
+          duration: getReducedMotion() ? 1 : 190,
+          easing: 'ease-out',
+        },
+      );
+      if (!isCurrentAnimationRun(runId)) return;
+      await drawPath(leadingThread, leadingLength, 300, 'cubic-bezier(.22,1,.36,1)');
+      if (!isCurrentAnimationRun(runId)) return;
+      await drawPath(menuOutline, outlineLength, 665, 'cubic-bezier(.45,0,.15,1)');
+      if (!isCurrentAnimationRun(runId)) return;
+      await Promise.all([
+        drawPath(topStitch, stitchLength, 250, 'ease-out'),
+        animateElement(menuFill, [{ opacity: 0 }, { opacity: 1 }], {
+          duration: getReducedMotion() ? 1 : 300,
+          easing: 'ease-out',
+        }),
+        animateElement(textureFill, [{ opacity: 0 }, { opacity: 1 }], {
+          duration: getReducedMotion() ? 1 : 360,
+          easing: 'ease-out',
+        }),
+      ]);
+      if (!isCurrentAnimationRun(runId)) return;
+      await Promise.all([
+        animateElement(menuSeparators, [{ opacity: 0 }, { opacity: 1 }], {
+          duration: getReducedMotion() ? 1 : 260,
+          easing: 'ease-out',
+        }),
+        animateElement(
+          menuItems,
+          [
+            { opacity: 0, transform: 'translateY(18px)' },
+            { opacity: 1, transform: 'translateY(0)' },
+          ],
+          {
+            duration: getReducedMotion() ? 1 : 300,
+            easing: 'cubic-bezier(.22,1,.36,1)',
+          },
+        ),
+        animateElement(
+          menuLanguagePanel,
+          [
+            { opacity: 0, transform: 'translate(-50%, 10px)' },
+            { opacity: 1, transform: 'translate(-50%, 0)' },
+          ],
+          {
+            duration: getReducedMotion() ? 1 : 300,
+            easing: 'cubic-bezier(.22,1,.36,1)',
+          },
+        ),
+      ]);
+      if (!isCurrentAnimationRun(runId)) return;
+      menuSeparators.style.opacity = '1';
+      menuItems.style.opacity = '1';
+      menuItems.style.transform = 'translateY(0)';
+      menuLanguagePanel.style.opacity = '1';
+      menuLanguagePanel.style.transform = 'translate(-50%, 0)';
+      menuLanguagePanel.style.pointerEvents = 'auto';
+      isAnimating = false;
+      focusFirstLink();
+    };
+
+    const closeMenu = async (restoreFocus = false, immediate = false): Promise<void> => {
+      if (!isOpen && !isAnimating) return;
+      if (immediate) {
+        animationRunId += 1;
+        isOpen = false;
+        isAnimating = false;
+        isClosing = false;
+        cancelRunningAnimations();
+        resetClosedStyles();
+        if (restoreFocus) iconFrame.focus({ preventScroll: true });
+        return;
+      }
+      if (isAnimating) return;
+      const runId = ++animationRunId;
+      isAnimating = true;
+      isClosing = true;
+      setClosedA11y();
+      menuLanguagePanel.style.pointerEvents = 'none';
+      await Promise.all([
+        animateElement(menuSeparators, [{ opacity: 1 }, { opacity: 0 }], {
+          duration: getReducedMotion() ? 1 : 160,
+          easing: 'ease-in',
+        }),
+        animateElement(
+          menuItems,
+          [
+            { opacity: 1, transform: 'translateY(0)' },
+            { opacity: 0, transform: 'translateY(18px)' },
+          ],
+          {
+            duration: getReducedMotion() ? 1 : 180,
+            easing: 'ease-in',
+          },
+        ),
+        animateElement(
+          menuLanguagePanel,
+          [
+            { opacity: 1, transform: 'translate(-50%, 0)' },
+            { opacity: 0, transform: 'translate(-50%, 10px)' },
+          ],
+          {
+            duration: getReducedMotion() ? 1 : 180,
+            easing: 'ease-in',
+          },
+        ),
+      ]);
+      if (runId !== animationRunId) return;
+      await Promise.all([
+        animateElement(menuFill, [{ opacity: 1 }, { opacity: 0 }], {
+          duration: getReducedMotion() ? 1 : 190,
+          easing: 'ease-in',
+        }),
+        animateElement(textureFill, [{ opacity: 1 }, { opacity: 0 }], {
+          duration: getReducedMotion() ? 1 : 190,
+          easing: 'ease-in',
+        }),
+        erasePath(topStitch, stitchLength, 200, 'ease-in'),
+      ]);
+      if (runId !== animationRunId) return;
+      await erasePath(menuOutline, outlineLength, 540, 'cubic-bezier(.55,0,1,.45)');
+      if (runId !== animationRunId) return;
+      await erasePath(leadingThread, leadingLength, 240, 'ease-in');
+      if (runId !== animationRunId) return;
+      await animateElement(
+        stage,
+        [
+          { opacity: 1, transform: 'scaleY(1)' },
+          { opacity: 0, transform: 'scaleY(0)' },
+        ],
+        {
+          duration: getReducedMotion() ? 1 : 190,
+          easing: 'ease-in',
+        },
+      );
+      if (runId !== animationRunId) return;
+      stage.style.visibility = 'hidden';
+      await rotateSpool(0, 360);
+      if (runId !== animationRunId) return;
+      isOpen = false;
+      isAnimating = false;
+      isClosing = false;
+      if (restoreFocus) iconFrame.focus({ preventScroll: true });
+    };
+
+    const updateTriggerContrast = (): void => {
+      contrastFrame = 0;
+      const bounds = iconFrame.getBoundingClientRect();
+      const centerX = bounds.left + bounds.width / 2;
+      const centerY = bounds.top + bounds.height / 2;
+      const overDarkHero = document
+        .elementsFromPoint(centerX, centerY)
+        .some(
+          (element) => !navBlock.contains(element) && Boolean(element.closest('.hero, .page-hero')),
+        );
+      navBlock.dataset.onDark = String(overDarkHero);
+    };
+    const scheduleTriggerContrast = (): void => {
+      if (contrastFrame) return;
+      contrastFrame = window.requestAnimationFrame(updateTriggerContrast);
+    };
+    const setLightboxBlocked = (blocked: boolean): void => {
+      if (blocked) {
+        navBlock.dataset.lightboxBlocked = 'true';
+        iconFrame.disabled = true;
+        void closeMenu(false, true);
+        return;
+      }
+      delete navBlock.dataset.lightboxBlocked;
+      iconFrame.disabled = false;
+      scheduleTriggerContrast();
+    };
+    const onLightboxState = (event: Event): void => {
+      const detail = (event as CustomEvent<{ open?: boolean }>).detail;
+      setLightboxBlocked(Boolean(detail?.open));
+    };
+
+    const onMouseEnter = (): void => {
+      if (!isOpen && !isAnimating) void rotateSpool(90, 600);
+    };
+    const onMouseLeave = (): void => {
+      if (!isOpen && !isAnimating) void rotateSpool(0, 450);
+    };
+    const onTriggerClick = (): void => {
+      if (!isOpen) {
+        void openMenu();
+        return;
+      }
+      if (isClosing) {
+        void closeMenu(false, true).then(openMenu);
+        return;
+      }
+      void closeMenu(false, isAnimating);
+    };
+    const onDocumentClick = (event: MouseEvent): void => {
+      if (!isOpen || navBlock.contains(event.target as Node)) return;
+      void closeMenu(false, isAnimating);
+    };
+    const onKeydown = (event: KeyboardEvent): void => {
+      if (!isOpen) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        void closeMenu(true, isAnimating);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const focusableElements = getFocusableElements();
+      if (!focusableElements.length) {
+        event.preventDefault();
+        iconFrame.focus({ preventScroll: true });
+        return;
+      }
+
+      const firstFocusable = focusableElements[0];
+      const lastFocusable = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstFocusable) {
+        event.preventDefault();
+        lastFocusable?.focus({ preventScroll: true });
+      } else if (!event.shiftKey && activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable?.focus({ preventScroll: true });
+      } else if (!activeElement || !elements.root.contains(activeElement)) {
+        event.preventDefault();
+        firstFocusable?.focus({ preventScroll: true });
+      }
+    };
+    const onLinkClick = (): void => {
+      void closeMenu(false, true);
+    };
+
+    resetClosedStyles();
+    updateTriggerContrast();
+    setLightboxBlocked(document.documentElement.dataset.lightboxOpen === 'true');
+    iconFrame.addEventListener('mouseenter', onMouseEnter);
+    iconFrame.addEventListener('mouseleave', onMouseLeave);
+    iconFrame.addEventListener('focus', onMouseEnter);
+    iconFrame.addEventListener('blur', onMouseLeave);
+    iconFrame.addEventListener('click', onTriggerClick);
+    document.addEventListener('click', onDocumentClick);
+    document.addEventListener('keydown', onKeydown);
+    document.addEventListener('site:lightbox-state', onLightboxState);
+    window.addEventListener('scroll', scheduleTriggerContrast, { passive: true });
+    window.addEventListener('resize', scheduleTriggerContrast);
+    links.forEach((link) => link.addEventListener('click', onLinkClick));
+
+    return () => {
+      iconFrame.removeEventListener('mouseenter', onMouseEnter);
+      iconFrame.removeEventListener('mouseleave', onMouseLeave);
+      iconFrame.removeEventListener('focus', onMouseEnter);
+      iconFrame.removeEventListener('blur', onMouseLeave);
+      iconFrame.removeEventListener('click', onTriggerClick);
+      document.removeEventListener('click', onDocumentClick);
+      document.removeEventListener('keydown', onKeydown);
+      document.removeEventListener('site:lightbox-state', onLightboxState);
+      window.removeEventListener('scroll', scheduleTriggerContrast);
+      window.removeEventListener('resize', scheduleTriggerContrast);
+      window.cancelAnimationFrame(contrastFrame);
+      links.forEach((link) => link.removeEventListener('click', onLinkClick));
+      void closeMenu(false, true);
+      cancelRunningAnimations();
+      animationContext.revert();
+      navBlock.dataset.bound = 'false';
+    };
+  }
+
+  function bindThreadMenus(): void {
+    document
+      .querySelectorAll<HTMLElement>('[data-thread-menu]')
+      .forEach((navBlock) => menuCleanups.push(initThreadMenu(navBlock)));
+  }
+
+  document.addEventListener('astro:page-load', bindThreadMenus);
+  document.addEventListener('astro:before-swap', () => {
+    while (menuCleanups.length) menuCleanups.pop()?.();
+  });
+</script>

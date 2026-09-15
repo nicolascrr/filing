@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" width="600" height="900" role="img" aria-label="Galerie placeholder — ratio 2:3">
+  <title>Galerie placeholder — ratio 2:3</title>
+  <defs>
+    <linearGradient id="g23" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3eee2"/>
+      <stop offset="1" stop-color="#e6dcc6"/>
+    </linearGradient>
+    <pattern id="g23p" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="22" stroke="#b8a069" stroke-width="0.5" stroke-opacity="0.14"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="900" fill="url(#g23)"/>
+  <rect width="600" height="900" fill="url(#g23p)"/>
+  <g transform="translate(300 450)" text-anchor="middle" font-family="'Poppins','Helvetica Neue',Arial,sans-serif">
+    <text font-size="26" font-weight="500" letter-spacing="8" fill="#2b2b2b" fill-opacity="0.55">2:3</text>
+    <line x1="-30" y1="22" x2="30" y2="22" stroke="#b8a069" stroke-width="1" stroke-opacity="0.6"/>
+  </g>
+</svg>

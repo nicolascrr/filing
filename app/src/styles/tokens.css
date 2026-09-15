@@ -1,0 +1,57 @@
+/* ==========================================================================
+   Design Tokens — Fil'ing Broderies
+   Luxury neutral palette: warm white, charcoal, muted gold accent.
+   All values are CSS custom properties, consumed via var() or Tailwind @theme.
+   ========================================================================== */
+
+:root {
+  /* ---- Colors ---- */
+  --color-bg: #ffffff; /* white body background */
+  --color-footer: rgb(50, 50, 50); /* footer background */
+  --color-charcoal: #2b2b2b; /* dark text */
+  --color-warm-white: #f8f6f3; /* warm off-white sections */
+  --color-gold: #b8a069; /* muted gold accent (decoration/borders/icons) */
+  --color-gold-text: #8a7541; /* darker gold for TEXT on light bg (AA ~4.6:1) */
+  --color-gold-light: #d4c4a0; /* lighter gold */
+  --color-brand-orange: rgb(244, 132, 8); /* official Fil'ing orange */
+  --color-text-muted: #6b6b6b; /* muted text */
+  --color-border: #e5e3e0; /* subtle borders */
+
+  /* ---- Typography ---- */
+  --font-heading: 'Poppins', sans-serif;
+  --font-body: 'Noto Sans', sans-serif;
+
+  /* Fluid type scale (clamp for responsive) */
+  --text-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8rem);
+  --text-sm: clamp(0.875rem, 0.84rem + 0.18vw, 0.95rem);
+  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.1rem);
+  --text-lg: clamp(1.125rem, 1.07rem + 0.28vw, 1.3rem);
+  --text-xl: clamp(1.25rem, 1.18rem + 0.35vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.4rem + 0.5vw, 1.9rem);
+  --text-3xl: clamp(1.9rem, 1.75rem + 0.75vw, 2.5rem);
+  --text-4xl: clamp(2.5rem, 2.25rem + 1.25vw, 3.5rem);
+
+  /* ---- Spacing ---- */
+  --space-section: clamp(3.25rem, 6vw, 6rem); /* between sections */
+  --space-component: clamp(1.5rem, 3vw, 3rem); /* between components */
+  --content-max: 1600px; /* constrained content width — generously spread on large screens (V2-08) */
+  --content-padding: clamp(
+    1.5rem,
+    4vw,
+    3rem
+  ); /* horizontal padding — reduced max so content breathes more on large screens (V2-08) */
+
+  /* ---- Border radius ---- */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* ---- Shadows (subtle, elegant) ---- */
+  --shadow-sm: 0 1px 2px rgba(43, 43, 43, 0.04), 0 1px 3px rgba(43, 43, 43, 0.06);
+  --shadow-md: 0 4px 12px rgba(43, 43, 43, 0.06), 0 2px 6px rgba(43, 43, 43, 0.04);
+  --shadow-lg: 0 12px 32px rgba(43, 43, 43, 0.08), 0 4px 12px rgba(43, 43, 43, 0.05);
+
+  /* ---- Transitions ---- */
+  --ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-base: 0.6s;
+}

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 600" width="1920" height="600" role="img" aria-label="Galerie — page hero placeholder">
+  <title>Galerie — page hero placeholder</title>
+  <defs>
+    <linearGradient id="phgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8f6f3"/>
+      <stop offset="0.5" stop-color="#f3eee2"/>
+      <stop offset="1" stop-color="#e8dcc4"/>
+    </linearGradient>
+    <pattern id="phgStitch" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <line x1="0" y1="0" x2="0" y2="16" stroke="#b8a069" stroke-width="0.5" stroke-opacity="0.13"/>
+      <circle cx="8" cy="8" r="0.6" fill="#d4c4a0" fill-opacity="0.18"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="600" fill="url(#phgGrad)"/>
+  <rect width="1920" height="600" fill="url(#phgStitch)"/>
+  <g transform="translate(960 300)" text-anchor="middle" font-family="'Poppins','Helvetica Neue',Arial,sans-serif">
+    <text font-size="22" font-weight="500" letter-spacing="10" fill="#2b2b2b" fill-opacity="0.85">GALERIE</text>
+    <line x1="-40" y1="28" x2="40" y2="28" stroke="#b8a069" stroke-width="1" stroke-opacity="0.7"/>
+  </g>
+</svg>

@@ -1,0 +1,886 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+export interface CarouselImage {
+  src: ImageMetadata;
+  alt: string;
+}
+
+export interface Props {
+  images: CarouselImage[];
+  class?: string;
+}
+
+const { images, class: className } = Astro.props;
+const t = Astro.locals.t;
+const hasImages = images.length > 0;
+---
+
+{
+  hasImages && (
+    <section
+      class:list={['big-carousel', className]}
+      aria-roledescription="carousel"
+      aria-label={t('common.bigcarousel.regionLabel')}
+      data-big-carousel
+    >
+      <div class="big-carousel__frame">
+        <div class="big-carousel__stage" data-big-carousel-stage>
+          <ul class="big-carousel__slides" data-big-carousel-slides>
+            {images.map((image, index) => (
+              <li
+                class="big-carousel__slide"
+                data-big-carousel-slide
+                data-index={index}
+                aria-hidden={index === 0 ? 'false' : 'true'}
+              >
+                <button
+                  type="button"
+                  class="big-carousel__image-trigger"
+                  data-big-carousel-trigger
+                  data-index={index}
+                  aria-label={`${t('common.carousel.openLabel')} — ${image.alt}`}
+                >
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    widths={[480, 768, 1024, 1440, 1920]}
+                    sizes="(max-width: 1023px) 100vw, (max-width: 1440px) 88vw, 1500px"
+                    class="big-carousel__img"
+                    loading="lazy"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div class="big-carousel__edge big-carousel__edge--start" aria-hidden="true" />
+          <div class="big-carousel__edge big-carousel__edge--end" aria-hidden="true" />
+          <button
+            type="button"
+            class="big-carousel__arrow big-carousel__arrow--prev"
+            data-big-carousel-prev
+            aria-label={t('common.bigcarousel.prevLabel')}
+          >
+            <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+              <path d="M19.5 7.5 11 16l8.5 8.5M12 16h10" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="big-carousel__arrow big-carousel__arrow--next"
+            data-big-carousel-next
+            aria-label={t('common.bigcarousel.nextLabel')}
+          >
+            <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+              <path d="m12.5 7.5 8.5 8.5-8.5 8.5M20 16H10" />
+            </svg>
+          </button>
+          <p class="sr-only" aria-live="polite" data-big-carousel-live>
+            {images[0]?.alt ?? ''}
+          </p>
+        </div>
+        <p class="big-carousel__caption" data-big-carousel-caption>
+          {images[0]?.alt ?? ''}
+        </p>
+      </div>
+
+      <nav class="big-carousel__thumbs" aria-label={t('common.bigcarousel.regionLabel')}>
+        {images.map((image, index) => (
+          <button
+            type="button"
+            class="big-carousel__thumb"
+            data-big-carousel-thumb
+            data-index={index}
+            aria-label={`${t('common.bigcarousel.goToImage')} ${index + 1}`}
+            aria-current={index === 0 ? 'true' : 'false'}
+          >
+            <span class="big-carousel__thumb-number" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <Image
+              src={image.src}
+              alt=""
+              widths={[80, 160]}
+              sizes="112px"
+              class="big-carousel__thumb-img"
+              loading="lazy"
+            />
+          </button>
+        ))}
+      </nav>
+
+      <div class="big-carousel__dots" aria-label={t('common.bigcarousel.regionLabel')}>
+        {images.map((_image, index) => (
+          <button
+            type="button"
+            class="big-carousel__dot"
+            data-big-carousel-dot
+            data-index={index}
+            aria-label={`${t('common.bigcarousel.goToImage')} ${index + 1}`}
+            aria-current={index === 0 ? 'true' : 'false'}
+          />
+        ))}
+      </div>
+
+      <div
+        class="big-carousel__lightbox"
+        data-big-carousel-lightbox
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('common.carousel.dialogLabel')}
+        aria-hidden="true"
+        hidden
+      >
+        <div class="big-carousel__backdrop" data-big-carousel-backdrop aria-hidden="true" />
+        <button
+          type="button"
+          class="big-carousel__close"
+          data-big-carousel-close
+          aria-label={t('common.carousel.closeLabel')}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6 18 18M18 6 6 18" />
+          </svg>
+        </button>
+        <figure class="big-carousel__lightbox-figure">
+          <img class="big-carousel__large" data-big-carousel-large alt="" src="" />
+          <figcaption data-big-carousel-lightbox-caption />
+        </figure>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .big-carousel {
+    width: 100%;
+    overflow: clip;
+  }
+  .big-carousel__frame {
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
+    padding: clamp(0.35rem, 1vw, 0.75rem);
+    background: var(--color-warm-white);
+    box-shadow: var(--shadow-md);
+  }
+  .big-carousel__stage {
+    position: relative;
+    width: 100%;
+    outline-offset: 5px;
+  }
+  .big-carousel__stage:focus-visible,
+  .big-carousel button:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+  }
+  .big-carousel__slides {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    cursor: grab;
+  }
+  .big-carousel[data-dragging='true'] .big-carousel__slides {
+    cursor: grabbing;
+  }
+  .big-carousel__slides::-webkit-scrollbar {
+    display: none;
+  }
+  .big-carousel__slide {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: center;
+  }
+  .big-carousel__image-trigger {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background:
+      radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.08), transparent 58%),
+      var(--color-charcoal);
+    cursor: zoom-in;
+  }
+  .big-carousel__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .big-carousel__caption {
+    margin: 0;
+    padding: 0.8rem 0.35rem 0.1rem;
+    color: var(--color-charcoal);
+    font-size: var(--text-sm);
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+  .big-carousel__arrow,
+  .big-carousel__edge {
+    display: none;
+  }
+  .big-carousel__dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.15rem;
+    padding-top: 0.65rem;
+  }
+  .big-carousel__dot {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .big-carousel__dot::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-border);
+    content: '';
+    transform: translate(-50%, -50%);
+    transition:
+      transform 0.35s var(--ease-luxury),
+      background 0.35s var(--ease-luxury);
+  }
+  .big-carousel__dot[aria-current='true']::after {
+    background: var(--color-gold);
+    transform: translate(-50%, -50%) scale(1.65);
+  }
+  .big-carousel__thumbs {
+    display: none;
+  }
+  .big-carousel__lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: clamp(1rem, 4vw, 3rem);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.985);
+    transition:
+      opacity 0.8s var(--ease-luxury),
+      transform 0.8s var(--ease-luxury);
+  }
+  .big-carousel__lightbox[data-open='true'] {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
+  .big-carousel__lightbox[hidden] {
+    display: none;
+  }
+  .big-carousel__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(25, 24, 22, 0.92);
+    backdrop-filter: blur(5px);
+  }
+  .big-carousel__close {
+    position: absolute;
+    top: clamp(1rem, 3vw, 1.75rem);
+    right: clamp(1rem, 3vw, 1.75rem);
+    z-index: 1;
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    min-width: 44px;
+    min-height: 44px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+  }
+  .big-carousel__close svg,
+  .big-carousel__arrow svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.35;
+  }
+  .big-carousel__lightbox-figure {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    max-width: 92vw;
+    max-height: 90svh;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    color: #fff;
+    text-align: center;
+  }
+  .big-carousel__large {
+    max-width: 92vw;
+    max-height: 78svh;
+    border-radius: var(--radius-sm);
+    object-fit: contain;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  }
+  @media (min-width: 1024px) {
+    .big-carousel {
+      overflow: visible;
+    }
+    .big-carousel__frame {
+      padding: clamp(0.65rem, 1.4vw, 1.25rem);
+    }
+    .big-carousel__stage {
+      aspect-ratio: 16 / 6.8;
+      max-height: min(54vh, 620px);
+      overflow: hidden;
+      background: var(--color-charcoal);
+    }
+    .big-carousel__slides {
+      position: absolute;
+      inset: 0;
+      display: block;
+      overflow: hidden;
+      scroll-snap-type: none;
+    }
+    .big-carousel__slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .big-carousel__slide[data-active='true'] {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .big-carousel__image-trigger {
+      height: 100%;
+      aspect-ratio: auto;
+      cursor: default;
+    }
+    .big-carousel__image-trigger:focus {
+      outline: 0;
+    }
+    .big-carousel__edge {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      bottom: 0;
+      width: 12%;
+      display: block;
+      pointer-events: none;
+    }
+    .big-carousel__edge--start {
+      left: 0;
+      background: linear-gradient(90deg, rgba(20, 20, 20, 0.42), transparent);
+    }
+    .big-carousel__edge--end {
+      right: 0;
+      background: linear-gradient(270deg, rgba(20, 20, 20, 0.42), transparent);
+    }
+    .big-carousel__arrow {
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      display: grid;
+      width: 3rem;
+      height: 3rem;
+      min-width: 44px;
+      min-height: 44px;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(24, 24, 22, 0.25);
+      cursor: pointer;
+      transform: translateY(-50%);
+      transition:
+        background 0.35s var(--ease-luxury),
+        color 0.35s var(--ease-luxury),
+        transform 0.35s var(--ease-luxury);
+    }
+    .big-carousel__arrow--prev {
+      left: clamp(1rem, 3vw, 2.5rem);
+    }
+    .big-carousel__arrow--next {
+      right: clamp(1rem, 3vw, 2.5rem);
+    }
+    .big-carousel__arrow:hover,
+    .big-carousel__arrow:focus-visible {
+      color: var(--color-gold);
+      background: rgba(24, 24, 22, 0.72);
+    }
+    .big-carousel__arrow:active {
+      transform: translateY(-50%) scale(0.94);
+    }
+    .big-carousel__caption {
+      padding-top: 1rem;
+      text-align: left;
+    }
+    .big-carousel__dots {
+      display: none;
+    }
+    .big-carousel__thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+      gap: 0.45rem;
+      margin-top: 0.55rem;
+    }
+    .big-carousel__thumb {
+      position: relative;
+      min-width: 0;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      padding: 0;
+      border: 1px solid transparent;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.08), transparent 58%),
+        var(--color-charcoal);
+      cursor: pointer;
+      transition:
+        border-color 0.35s var(--ease-luxury),
+        transform 0.35s var(--ease-luxury);
+    }
+    .big-carousel__thumb:hover {
+      transform: translateY(-3px);
+    }
+    .big-carousel__thumb[aria-current='true'] {
+      border-color: var(--color-gold);
+    }
+    .big-carousel__thumb-img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: grayscale(0.8);
+      opacity: 0.55;
+      transition:
+        filter 0.5s var(--ease-luxury),
+        opacity 0.5s var(--ease-luxury);
+    }
+    .big-carousel__thumb[aria-current='true'] .big-carousel__thumb-img {
+      filter: none;
+      opacity: 1;
+    }
+    .big-carousel__thumb-number {
+      position: absolute;
+      z-index: 1;
+      bottom: 0.3rem;
+      left: 0.4rem;
+      color: #fff;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-shadow: 0 1px 5px #000;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .big-carousel__dot::after,
+    .big-carousel__arrow,
+    .big-carousel__thumb,
+    .big-carousel__thumb-img,
+    .big-carousel__lightbox {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../scripts/gsap';
+
+  type Cleanup = () => void;
+  const cleanups: Cleanup[] = [];
+
+  function focusableIn(element: HTMLElement): HTMLElement[] {
+    return Array.from(
+      element.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((item) => item.offsetParent !== null);
+  }
+
+  function initCarousel(root: HTMLElement): Cleanup | null {
+    if (root.dataset.bound === 'true') return null;
+    const stage = root.querySelector<HTMLElement>('[data-big-carousel-stage]');
+    const slidesEl = root.querySelector<HTMLElement>('[data-big-carousel-slides]');
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-big-carousel-slide]'));
+    const triggers = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('[data-big-carousel-trigger]'),
+    );
+    const thumbs = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('[data-big-carousel-thumb]'),
+    );
+    const dots = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-big-carousel-dot]'));
+    const caption = root.querySelector<HTMLElement>('[data-big-carousel-caption]');
+    const live = root.querySelector<HTMLElement>('[data-big-carousel-live]');
+    const prev = root.querySelector<HTMLButtonElement>('[data-big-carousel-prev]');
+    const next = root.querySelector<HTMLButtonElement>('[data-big-carousel-next]');
+    const modal = root.querySelector<HTMLElement>('[data-big-carousel-lightbox]');
+    const backdrop = root.querySelector<HTMLElement>('[data-big-carousel-backdrop]');
+    const close = root.querySelector<HTMLButtonElement>('[data-big-carousel-close]');
+    const large = root.querySelector<HTMLImageElement>('[data-big-carousel-large]');
+    const modalCaption = root.querySelector<HTMLElement>('[data-big-carousel-lightbox-caption]');
+    if (
+      !stage ||
+      !slidesEl ||
+      !prev ||
+      !next ||
+      !modal ||
+      !backdrop ||
+      !close ||
+      !large ||
+      slides.length === 0
+    )
+      return null;
+    root.dataset.bound = 'true';
+    stage.setAttribute('tabindex', '0');
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const reduced = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let current = 0;
+    let modalOpen = false;
+    let lastFocused: HTMLElement | null = null;
+    let previousBodyOverflow = '';
+    let previousDocumentOverflow = '';
+    let previousScrollX = 0;
+    let previousScrollY = 0;
+    let previousScrollBehavior = '';
+    let scrollLocked = false;
+    let scrollFrame: number | undefined;
+    let hideTimer: number | undefined;
+    let closeTransitionHandler: ((event: TransitionEvent) => void) | undefined;
+    let dragStartX = 0;
+    let dragStartScroll = 0;
+    let isDragging = false;
+    let suppressClick = false;
+
+    const publishLightboxState = (open: boolean): void => {
+      if (open) document.documentElement.dataset.lightboxOpen = 'true';
+      else delete document.documentElement.dataset.lightboxOpen;
+      document.dispatchEvent(new CustomEvent('site:lightbox-state', { detail: { open } }));
+    };
+
+    const imageAlt = (index: number): string => slides[index]?.querySelector('img')?.alt ?? '';
+    const render = (): void => {
+      slides.forEach((slide, index) => {
+        const active = index === current;
+        slide.dataset.active = String(active);
+        // Mobile is a native, scrollable gallery: every slide must remain
+        // exposed and keyboard reachable. Desktop presents one pane at a time.
+        const hidden = desktop.matches && !active;
+        slide.setAttribute('aria-hidden', String(hidden));
+        slide.inert = hidden;
+        const trigger = slide.querySelector<HTMLButtonElement>('[data-big-carousel-trigger]');
+        if (trigger) {
+          trigger.tabIndex = desktop.matches ? -1 : 0;
+          trigger.setAttribute('aria-disabled', String(desktop.matches));
+        }
+      });
+      [...thumbs, ...dots].forEach((button) =>
+        button.setAttribute('aria-current', String(Number(button.dataset.index) === current)),
+      );
+      const text = imageAlt(current);
+      if (caption) caption.textContent = text;
+      if (live) live.textContent = text;
+    };
+    const syncScroll = (behavior: ScrollBehavior = 'auto'): void => {
+      if (!desktop.matches)
+        slides[current]?.scrollIntoView({ behavior, block: 'nearest', inline: 'center' });
+    };
+    const goTo = (requested: number, direction = 1, fromScroll = false): void => {
+      const target = ((requested % slides.length) + slides.length) % slides.length;
+      if (target === current && !fromScroll) {
+        syncScroll(reduced() ? 'auto' : 'smooth');
+        return;
+      }
+      const previous = current;
+      current = target;
+      gsap.killTweensOf(slides);
+      render();
+      if (!desktop.matches) {
+        if (!fromScroll) syncScroll(reduced() ? 'auto' : 'smooth');
+        return;
+      }
+      if (reduced()) {
+        gsap.set(slides, { clearProps: 'opacity,transform' });
+        return;
+      }
+      const outgoing = slides[previous];
+      const incoming = slides[current];
+      if (!outgoing || !incoming) return;
+      gsap.set(incoming, { opacity: 0, xPercent: direction > 0 ? 7 : -7, scale: 1.025 });
+      gsap
+        .timeline()
+        .to(
+          outgoing,
+          {
+            opacity: 0,
+            xPercent: direction > 0 ? -5 : 5,
+            scale: 0.985,
+            duration: 0.8,
+            ease: 'power2.out',
+          },
+          0,
+        )
+        .to(
+          incoming,
+          {
+            opacity: 1,
+            xPercent: 0,
+            scale: 1,
+            duration: 1.1,
+            ease: 'power3.out',
+            clearProps: 'transform',
+          },
+          0.12,
+        );
+    };
+    const onScroll = (): void => {
+      if (desktop.matches || scrollFrame !== undefined) return;
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = undefined;
+        const center = slidesEl.scrollLeft + slidesEl.clientWidth / 2;
+        let closest = 0;
+        let distance = Number.POSITIVE_INFINITY;
+        slides.forEach((slide, index) => {
+          const delta = Math.abs(slide.offsetLeft + slide.offsetWidth / 2 - center);
+          if (delta < distance) {
+            distance = delta;
+            closest = index;
+          }
+        });
+        if (closest !== current) goTo(closest, 1, true);
+      });
+    };
+    const onBreakpoint = (): void => {
+      gsap.killTweensOf(slides);
+      render();
+      syncScroll('auto');
+    };
+    const onStageKey = (event: KeyboardEvent): void => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        goTo(current - 1, -1);
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        goTo(current + 1, 1);
+      }
+    };
+    const onControl = (event: Event): void => {
+      const index = Number((event.currentTarget as HTMLButtonElement).dataset.index);
+      if (Number.isFinite(index)) goTo(index, index >= current ? 1 : -1);
+    };
+    const onPointerDown = (event: PointerEvent): void => {
+      dragStartX = event.clientX;
+      dragStartScroll = slidesEl.scrollLeft;
+      isDragging = false;
+      root.dataset.dragging = 'true';
+      if (desktop.matches) slidesEl.setPointerCapture(event.pointerId);
+    };
+    const onPointerMove = (event: PointerEvent): void => {
+      const delta = event.clientX - dragStartX;
+      if (Math.abs(delta) > 8) isDragging = true;
+      if (!isDragging) return;
+      suppressClick = true;
+      if (desktop.matches) {
+        event.preventDefault();
+        return;
+      }
+      slidesEl.scrollLeft = dragStartScroll - delta;
+    };
+    const onPointerUp = (event: PointerEvent): void => {
+      delete root.dataset.dragging;
+      const delta = event.clientX - dragStartX;
+      if (desktop.matches && slidesEl.hasPointerCapture(event.pointerId)) {
+        slidesEl.releasePointerCapture(event.pointerId);
+        if (Math.abs(delta) > 42) goTo(current + (delta < 0 ? 1 : -1), delta < 0 ? 1 : -1);
+      }
+      if (isDragging) {
+        window.setTimeout(() => {
+          suppressClick = false;
+        }, 80);
+      } else {
+        suppressClick = false;
+      }
+      isDragging = false;
+    };
+    const preventTouchScroll = (event: TouchEvent): void => {
+      event.preventDefault();
+    };
+    const lockScroll = (): void => {
+      if (scrollLocked) return;
+      scrollLocked = true;
+      previousBodyOverflow = document.body.style.overflow;
+      previousDocumentOverflow = document.documentElement.style.overflow;
+      previousScrollX = window.scrollX;
+      previousScrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      document.addEventListener('touchmove', preventTouchScroll, { passive: false });
+    };
+    const unlockScroll = (): void => {
+      if (!scrollLocked) return;
+      scrollLocked = false;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+      document.removeEventListener('touchmove', preventTouchScroll);
+      previousScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(previousScrollX, previousScrollY);
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    };
+    const onDialogKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusableIn(modal);
+      const first = items[0];
+      const last = items.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const openModal = (trigger: HTMLButtonElement): void => {
+      if (desktop.matches || modalOpen) return;
+      const image = trigger.querySelector<HTMLImageElement>('img');
+      if (!image) return;
+      lastFocused = trigger;
+      large.src = image.currentSrc || image.src;
+      large.alt = image.alt;
+      if (modalCaption) modalCaption.textContent = image.alt;
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      modal.dataset.open = 'true';
+      modalOpen = true;
+      lockScroll();
+      publishLightboxState(true);
+      close.focus({ preventScroll: true });
+      document.addEventListener('keydown', onDialogKey, true);
+    };
+    const closeModal = (restoreFocus = true, immediate = false): void => {
+      if (!modalOpen) return;
+      modalOpen = false;
+      delete modal.dataset.open;
+      modal.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', onDialogKey, true);
+      window.clearTimeout(hideTimer);
+      if (closeTransitionHandler) {
+        modal.removeEventListener('transitionend', closeTransitionHandler);
+        closeTransitionHandler = undefined;
+      }
+      const hide = (): void => {
+        if (modalOpen || modal.hidden) return;
+        window.clearTimeout(hideTimer);
+        hideTimer = undefined;
+        if (closeTransitionHandler) {
+          modal.removeEventListener('transitionend', closeTransitionHandler);
+          closeTransitionHandler = undefined;
+        }
+        modal.hidden = true;
+        large.src = '';
+        large.alt = '';
+        if (modalCaption) modalCaption.textContent = '';
+        unlockScroll();
+        publishLightboxState(false);
+        if (restoreFocus) lastFocused?.focus({ preventScroll: true });
+      };
+      if (immediate || reduced()) hide();
+      else {
+        closeTransitionHandler = (event: TransitionEvent): void => {
+          if (event.target !== modal || event.propertyName !== 'opacity') return;
+          hide();
+        };
+        modal.addEventListener('transitionend', closeTransitionHandler);
+        hideTimer = window.setTimeout(hide, 850);
+      }
+    };
+    const onTrigger = (event: Event): void => {
+      if (suppressClick) {
+        event.preventDefault();
+        return;
+      }
+      openModal(event.currentTarget as HTMLButtonElement);
+    };
+    const onBackdrop = (event: MouseEvent): void => {
+      if (event.target === backdrop) closeModal();
+    };
+    const onClose = (): void => closeModal();
+    const onPrev = (): void => goTo(current - 1, -1);
+    const onNext = (): void => goTo(current + 1, 1);
+    stage.addEventListener('keydown', onStageKey);
+    slidesEl.addEventListener('scroll', onScroll, { passive: true });
+    slidesEl.addEventListener('pointerdown', onPointerDown);
+    slidesEl.addEventListener('pointermove', onPointerMove);
+    slidesEl.addEventListener('pointerup', onPointerUp);
+    slidesEl.addEventListener('pointercancel', onPointerUp);
+    prev.addEventListener('click', onPrev);
+    next.addEventListener('click', onNext);
+    [...thumbs, ...dots].forEach((control) => control.addEventListener('click', onControl));
+    triggers.forEach((trigger) => trigger.addEventListener('click', onTrigger));
+    close.addEventListener('click', onClose);
+    backdrop.addEventListener('click', onBackdrop);
+    desktop.addEventListener('change', onBreakpoint);
+    onBreakpoint();
+    return () => {
+      closeModal(false, true);
+      window.clearTimeout(hideTimer);
+      if (closeTransitionHandler) {
+        modal.removeEventListener('transitionend', closeTransitionHandler);
+        closeTransitionHandler = undefined;
+      }
+      if (scrollFrame !== undefined) window.cancelAnimationFrame(scrollFrame);
+      gsap.killTweensOf(slides);
+      stage.removeEventListener('keydown', onStageKey);
+      slidesEl.removeEventListener('scroll', onScroll);
+      slidesEl.removeEventListener('pointerdown', onPointerDown);
+      slidesEl.removeEventListener('pointermove', onPointerMove);
+      slidesEl.removeEventListener('pointerup', onPointerUp);
+      slidesEl.removeEventListener('pointercancel', onPointerUp);
+      prev.removeEventListener('click', onPrev);
+      next.removeEventListener('click', onNext);
+      [...thumbs, ...dots].forEach((control) => control.removeEventListener('click', onControl));
+      triggers.forEach((trigger) => trigger.removeEventListener('click', onTrigger));
+      close.removeEventListener('click', onClose);
+      backdrop.removeEventListener('click', onBackdrop);
+      desktop.removeEventListener('change', onBreakpoint);
+      document.removeEventListener('touchmove', preventTouchScroll);
+      root.dataset.bound = 'false';
+    };
+  }
+  function bind(): void {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+    document.querySelectorAll<HTMLElement>('[data-big-carousel]').forEach((root) => {
+      const cleanup = initCarousel(root);
+      if (cleanup) cleanups.push(cleanup);
+    });
+  }
+  document.addEventListener('astro:page-load', bind);
+  document.addEventListener('astro:before-swap', () => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+  });
+</script>

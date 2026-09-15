@@ -1,0 +1,609 @@
+---
+import { Image } from 'astro:assets';
+import type { TimelineMilestone } from '../../data/timeline';
+/* eslint-disable astro/jsx-a11y/no-noninteractive-tabindex -- Focusable articles preview milestones without acting as buttons. */
+
+export interface Props {
+  milestones: TimelineMilestone[];
+  class?: string;
+}
+
+const { milestones, class: className } = Astro.props;
+const t = Astro.locals.t;
+const regionLabel = t('accueil.timeline.regionLabel');
+---
+
+{
+  milestones.length > 0 && (
+    <section class:list={['timeline', className]} aria-label={regionLabel} data-timeline>
+      <div class="timeline__stage" data-timeline-stage>
+        <ol class="timeline__list" data-timeline-list>
+          {milestones.map((milestone, index) => (
+            <li class="timeline__item" data-timeline-item>
+              <article
+                class="timeline__card"
+                tabindex="0"
+                aria-current={index === 0 ? 'step' : undefined}
+                data-active={index === 0 ? 'true' : 'false'}
+                data-index={index}
+                data-timeline-card
+              >
+                <Image
+                  src={milestone.image}
+                  alt={t(milestone.imageAltKey)}
+                  widths={[320, 480, 720, 960]}
+                  sizes="(max-width: 1023px) 18.125rem, (max-width: 1279px) 26vw, 420px"
+                  class="timeline__image"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                />
+                <div class="timeline__scrim" aria-hidden="true" />
+                <div class="timeline__content">
+                  <h3 class="timeline__year">
+                    <span class="timeline__year-value">{milestone.year}</span>
+                  </h3>
+                  <p class="timeline__description">{t(milestone.textKey)}</p>
+                </div>
+              </article>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .timeline {
+    /* Change collapsed/expanded dimensions here. */
+    --timeline-card-expanded: 420px;
+    --timeline-card-collapsed: 80px;
+    --timeline-card-mobile: 290px;
+    --timeline-card-height: 290px;
+    --timeline-card-gap: 8px;
+    --timeline-card-radius: 20px;
+    /* Change the non-scroll transition duration/easing here. */
+    --timeline-duration: 0.58;
+    --timeline-ease: power2.out;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .timeline__stage {
+    width: 100%;
+  }
+
+  .timeline__list {
+    display: flex;
+    gap: var(--timeline-card-gap);
+    width: 100%;
+    margin: 0;
+    padding: 0 var(--content-padding) 0.75rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-padding-inline: var(--content-padding);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    list-style: none;
+  }
+
+  .timeline__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .timeline__item {
+    flex: 0 0 var(--timeline-card-mobile);
+    min-width: 0;
+    scroll-snap-align: center;
+  }
+
+  .timeline__card {
+    position: relative;
+    display: flex;
+    min-height: var(--timeline-card-height);
+    overflow: hidden;
+    border-radius: var(--timeline-card-radius);
+    background: var(--color-charcoal);
+    color: #fff;
+    isolation: isolate;
+    outline: none;
+  }
+
+  .timeline__card:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 4px;
+  }
+
+  .timeline__image,
+  .timeline__scrim {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .timeline__image {
+    z-index: -2;
+    object-fit: cover;
+    filter: grayscale(0.64) brightness(0.58);
+    transform: scale(1.02);
+  }
+
+  .timeline__scrim {
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(15, 14, 12, 0.04), rgba(15, 14, 12, 0.86));
+  }
+
+  .timeline__content {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.25rem;
+  }
+
+  .timeline__year,
+  .timeline__description {
+    margin: 0;
+  }
+
+  .timeline__year {
+    font-family: var(--font-heading);
+    font-size: clamp(2.3rem, 11vw, 4rem);
+    font-weight: 650;
+    line-height: 0.95;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+
+  .timeline__year-value {
+    display: inline-block;
+    transform-origin: left bottom;
+    will-change: transform, opacity;
+  }
+
+  .timeline__description {
+    margin-top: 0.75rem;
+    font-size: max(1rem, var(--text-sm));
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .timeline__card[data-active='true'] .timeline__image {
+    filter: grayscale(0) brightness(0.9);
+    transform: scale(1.07);
+  }
+
+  .timeline__card[data-active='true'] .timeline__scrim {
+    background: linear-gradient(180deg, rgba(15, 14, 12, 0.02), rgba(15, 14, 12, 0.78));
+  }
+
+  @media (max-width: 767px) {
+    .timeline {
+      --timeline-card-height: clamp(32rem, 72svh, 40rem);
+    }
+
+    .timeline__stage {
+      min-height: var(--timeline-card-height);
+    }
+
+    .timeline__card {
+      height: var(--timeline-card-height);
+      min-height: var(--timeline-card-height);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .timeline__year {
+      transform: translate(6px, -6px);
+    }
+  }
+
+  /* Desktop breakpoint: keep this in sync with DESKTOP_MEDIA_QUERY in the script. */
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+    /* Larger desktop-only dimensions: the row intentionally fills its container. */
+    .timeline {
+      --timeline-card-expanded: 520px;
+      --timeline-card-collapsed: 96px;
+      --timeline-card-height: clamp(30rem, 70vh, 44rem);
+    }
+
+    .timeline__stage {
+      display: flex;
+      min-height: min(82vh, 48rem);
+      flex-direction: column;
+      justify-content: center;
+      padding-block: clamp(1.5rem, 4vh, 3rem);
+    }
+
+    .timeline__list {
+      gap: var(--timeline-card-gap);
+      padding: 0;
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+
+    .timeline__item {
+      flex: 1 1 var(--timeline-card-collapsed);
+      transform: translateY(0);
+    }
+
+    .timeline__item[data-active='true'] {
+      transform: translateY(-1.25rem);
+    }
+
+    .timeline__card {
+      height: var(--timeline-card-height);
+      min-height: var(--timeline-card-height);
+      opacity: 0.72;
+    }
+
+    .timeline__content {
+      padding: 0.75rem 0.5rem;
+    }
+
+    .timeline__year {
+      font-size: 1.25rem;
+    }
+
+    .timeline__description {
+      position: absolute;
+      visibility: hidden;
+      max-width: 31ch;
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+
+    .timeline__card[data-active='true'] {
+      opacity: 1;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .timeline__card[data-active='true'] .timeline__scrim {
+      background: linear-gradient(180deg, rgba(15, 14, 12, 0.04), rgba(15, 14, 12, 0.86));
+    }
+
+    .timeline__card[data-active='true'] .timeline__year {
+      font-size: clamp(3rem, 5vw, 5rem);
+    }
+
+    .timeline__card[data-active='true'] .timeline__content {
+      padding: 1.5rem;
+    }
+
+    .timeline__card[data-active='true'] .timeline__description {
+      position: static;
+      visibility: visible;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .timeline__list {
+      scroll-snap-type: none;
+    }
+
+    .timeline__item {
+      flex-basis: var(--timeline-card-mobile);
+    }
+
+    .timeline__image {
+      filter: grayscale(0) brightness(0.82);
+      transform: none;
+    }
+
+    .timeline__description {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap, ScrollTrigger } from '../../scripts/gsap';
+
+  type Cleanup = () => void;
+  type ActiveSource = 'click' | 'focus' | 'touch' | 'scroll' | 'initial';
+  interface ActiveOptions {
+    animate?: boolean;
+    force?: boolean;
+    source: ActiveSource;
+  }
+
+  const cleanups: Cleanup[] = [];
+  // Desktop breakpoint: keep synchronized with the CSS media query above.
+  const DESKTOP_MEDIA_QUERY =
+    '(min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)';
+  // Preserve the continuous scrub model while making each milestone advance
+  // only slightly faster than the previously validated 0.24 viewport distance.
+  const SCROLL_VIEWPORT_MULTIPLIER = 0.216;
+
+  function initTimelines(): void {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+    document.querySelectorAll<HTMLElement>('[data-timeline]').forEach((root) => {
+      cleanups.push(initTimeline(root));
+    });
+  }
+
+  function initTimeline(root: HTMLElement): Cleanup {
+    const stage = root.querySelector<HTMLElement>('[data-timeline-stage]');
+    const list = root.querySelector<HTMLOListElement>('[data-timeline-list]');
+    const items = Array.from(root.querySelectorAll<HTMLElement>('[data-timeline-item]'));
+    const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-timeline-card]'));
+    const images = Array.from(root.querySelectorAll<HTMLImageElement>('.timeline__image'));
+    const scrims = Array.from(root.querySelectorAll<HTMLElement>('.timeline__scrim'));
+    const contents = Array.from(root.querySelectorAll<HTMLElement>('.timeline__content'));
+    const years = Array.from(root.querySelectorAll<HTMLElement>('.timeline__year'));
+    const yearValues = Array.from(
+      root.querySelectorAll<HTMLElement>('.timeline__year-value'),
+    );
+    const descriptions = Array.from(root.querySelectorAll<HTMLElement>('.timeline__description'));
+
+    if (!stage || !list || cards.length === 0 || items.length !== cards.length)
+      return () => undefined;
+
+    let activeIndex = 0;
+    let desktopAccordion = false;
+    let activeAnimation: gsap.core.Timeline | null = null;
+    let scrollFrame = 0;
+    let refreshFrame = 0;
+    let desktopTrigger: ReturnType<typeof ScrollTrigger.create> | null = null;
+    let media: gsap.MatchMedia | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let disposed = false;
+    const incompleteImageLoadListeners: Array<{
+      image: HTMLImageElement;
+      listener: () => void;
+    }> = [];
+    const context = gsap.context(() => {
+      const getDimension = (
+        name: '--timeline-card-expanded' | '--timeline-card-collapsed',
+      ): string => getComputedStyle(root).getPropertyValue(name).trim();
+      const getAnimationDuration = (): number =>
+        Number.parseFloat(getComputedStyle(root).getPropertyValue('--timeline-duration')) || 0.58;
+      const getAnimationEase = (): string =>
+        getComputedStyle(root).getPropertyValue('--timeline-ease').trim() || 'power2.out';
+
+      /**
+       * Single state controller for pointer, focus, touch, and ScrollTrigger.
+       * Scroll derives an integer index instead of tweening a master layout;
+       * that prevents stale transforms and keeps every input mode deterministic.
+       */
+      const setActiveMilestone = (nextIndex: number, options: ActiveOptions): void => {
+        const index = Math.min(Math.max(Math.round(nextIndex), 0), cards.length - 1);
+        if (!options.force && index === activeIndex && cards[index]?.dataset.active === 'true')
+          return;
+
+        const currentYearFontSize = years.map((year) => getComputedStyle(year).fontSize);
+        const currentCardOpacity = cards.map((card) => getComputedStyle(card).opacity);
+        activeIndex = index;
+        cards.forEach((card, cardIndex) => {
+          const active = cardIndex === index;
+          card.dataset.active = String(active);
+          if (items[cardIndex]) items[cardIndex].dataset.active = String(active);
+          if (active) card.setAttribute('aria-current', 'step');
+          else card.removeAttribute('aria-current');
+        });
+
+        if (!desktopAccordion) return;
+
+        activeAnimation?.kill();
+        const expanded = getDimension('--timeline-card-expanded');
+        const collapsed = getDimension('--timeline-card-collapsed');
+        const animate = options.animate ?? options.source !== 'scroll';
+        // Read CSS's responsive active/inactive font sizes, then restore the
+        // current inline values so GSAP can interpolate the year cleanly.
+        gsap.set(years, { clearProps: 'fontSize' });
+        const targetYearFontSize = years.map((year) => getComputedStyle(year).fontSize);
+        gsap.set(years, { fontSize: (itemIndex: number) => currentYearFontSize[itemIndex] });
+        gsap.set(cards, { opacity: (itemIndex: number) => currentCardOpacity[itemIndex] });
+        const itemBasis = items.map((_, itemIndex) => (itemIndex === index ? expanded : collapsed));
+        const imageFilters = cards.map((_, cardIndex) =>
+          cardIndex === index ? 'grayscale(0) brightness(0.9)' : 'grayscale(0.64) brightness(0.58)',
+        );
+
+        // Flex-basis is the only layout dimension animated: no mixed width system.
+        const state = {
+          flexBasis: itemBasis,
+          filter: imageFilters,
+          imageScale: cards.map((_, cardIndex) => (cardIndex === index ? 1.07 : 1.02)),
+          cardOpacity: cards.map((_, cardIndex) => (cardIndex === index ? 1 : 0.72)),
+          contentOpacity: cards.map((_, cardIndex) => (cardIndex === index ? 1 : 0.72)),
+          descriptionOpacity: cards.map((_, cardIndex) => (cardIndex === index ? 1 : 0)),
+          descriptionY: cards.map((_, cardIndex) => (cardIndex === index ? 0 : 10)),
+          scrimOpacity: cards.map((_, cardIndex) => (cardIndex === index ? 0.78 : 0.86)),
+          yearFontSize: targetYearFontSize,
+          yearOpacity: cards.map((_, cardIndex) => (cardIndex === index ? 1 : 0.88)),
+          yearScale: cards.map((_, cardIndex) => (cardIndex === index ? 1 : 0.97)),
+        };
+
+        if (!animate) {
+          gsap.set(items, { flexBasis: (itemIndex: number) => state.flexBasis[itemIndex] });
+          gsap.set(images, {
+            filter: (itemIndex: number) => state.filter[itemIndex],
+            scale: (itemIndex: number) => state.imageScale[itemIndex],
+          });
+          gsap.set(cards, { opacity: (itemIndex: number) => state.cardOpacity[itemIndex] });
+          gsap.set(contents, { opacity: (itemIndex: number) => state.contentOpacity[itemIndex] });
+          gsap.set(descriptions, {
+            autoAlpha: (itemIndex: number) => state.descriptionOpacity[itemIndex],
+            y: (itemIndex: number) => state.descriptionY[itemIndex],
+          });
+          gsap.set(years, { fontSize: (itemIndex: number) => state.yearFontSize[itemIndex] });
+          gsap.set(yearValues, {
+            opacity: (itemIndex: number) => state.yearOpacity[itemIndex],
+            scale: (itemIndex: number) => state.yearScale[itemIndex],
+          });
+          gsap.set(scrims, { opacity: (itemIndex: number) => state.scrimOpacity[itemIndex] });
+          return;
+        }
+
+        activeAnimation = gsap
+          .timeline({
+            defaults: {
+              duration: getAnimationDuration(),
+              ease: getAnimationEase(),
+              overwrite: 'auto',
+            },
+          })
+          .to(items, { flexBasis: (itemIndex: number) => state.flexBasis[itemIndex] }, 0)
+          .to(
+            images,
+            {
+              filter: (itemIndex: number) => state.filter[itemIndex],
+              scale: (itemIndex: number) => state.imageScale[itemIndex],
+            },
+            0,
+          )
+          .to(cards, { opacity: (itemIndex: number) => state.cardOpacity[itemIndex] }, 0)
+          .to(contents, { opacity: (itemIndex: number) => state.contentOpacity[itemIndex] }, 0)
+          .to(
+            descriptions,
+            {
+              autoAlpha: (itemIndex: number) => state.descriptionOpacity[itemIndex],
+              y: (itemIndex: number) => state.descriptionY[itemIndex],
+            },
+            0,
+          )
+          .to(years, { fontSize: (itemIndex: number) => state.yearFontSize[itemIndex] }, 0)
+          .to(
+            yearValues,
+            {
+              opacity: (itemIndex: number) => state.yearOpacity[itemIndex],
+              scale: (itemIndex: number) => state.yearScale[itemIndex],
+            },
+            0,
+          )
+          .to(scrims, { opacity: (itemIndex: number) => state.scrimOpacity[itemIndex] }, 0);
+      };
+
+      const activateNearestCard = (source: 'touch' | 'scroll'): void => {
+        const center = list.getBoundingClientRect().left + list.clientWidth / 2;
+        let nearestIndex = 0;
+        let nearestDistance = Number.POSITIVE_INFINITY;
+        cards.forEach((card, index) => {
+          const bounds = card.getBoundingClientRect();
+          const distance = Math.abs(bounds.left + bounds.width / 2 - center);
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestIndex = index;
+          }
+        });
+        setActiveMilestone(nearestIndex, { source, animate: true });
+      };
+
+      const onFocus = (event: FocusEvent): void => {
+        const card = event.currentTarget as HTMLElement;
+        setActiveMilestone(Number(card.dataset.index), { source: 'focus' });
+      };
+      const onTouchEnd = (): void => activateNearestCard('touch');
+      const onNativeScroll = (): void => {
+        window.cancelAnimationFrame(scrollFrame);
+        scrollFrame = window.requestAnimationFrame(() => activateNearestCard('scroll'));
+      };
+      const scheduleRefresh = (): void => {
+        if (disposed) return;
+        window.cancelAnimationFrame(refreshFrame);
+        refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+      };
+
+      cards.forEach((card) => {
+        card.addEventListener('focus', onFocus);
+      });
+      list.addEventListener('scroll', onNativeScroll, { passive: true });
+      list.addEventListener('pointerup', onTouchEnd, { passive: true });
+
+      media = gsap.matchMedia();
+      media.add(DESKTOP_MEDIA_QUERY, () => {
+        desktopAccordion = true;
+        setActiveMilestone(activeIndex, { source: 'initial', animate: false, force: true });
+        if (cards.length < 2)
+          return () => {
+            desktopAccordion = false;
+          };
+
+        desktopTrigger = ScrollTrigger.create({
+          trigger: stage,
+          start: 'center center',
+          end: () => `+=${(cards.length - 1) * window.innerHeight * SCROLL_VIEWPORT_MULTIPLIER}`,
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          scrub: 0.72,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const index = Math.round(self.progress * (cards.length - 1));
+            setActiveMilestone(index, { source: 'scroll', animate: true });
+          },
+        });
+        const onDesktopClick = (event: MouseEvent): void => {
+          if (!desktopTrigger) return;
+          const card = event.currentTarget as HTMLElement;
+          const index = Number(card.dataset.index);
+          // A click can occur while image/font layout has just settled. Refresh
+          // before reading start/end so the physical destination is current.
+          ScrollTrigger.refresh();
+          const normalizedProgress = index / (cards.length - 1);
+          const target =
+            desktopTrigger.start +
+            (desktopTrigger.end - desktopTrigger.start) * normalizedProgress;
+
+          setActiveMilestone(index, { source: 'click', animate: true });
+          desktopTrigger.scroll(target);
+        };
+        cards.forEach((card) => card.addEventListener('click', onDesktopClick));
+        return () => {
+          cards.forEach((card) => card.removeEventListener('click', onDesktopClick));
+          desktopTrigger?.kill();
+          desktopTrigger = null;
+          desktopAccordion = false;
+          gsap.set(
+            [...items, ...cards, ...images, ...scrims, ...contents, ...years, ...yearValues, ...descriptions],
+            { clearProps: 'all' },
+          );
+        };
+      });
+
+      resizeObserver = new ResizeObserver(scheduleRefresh);
+      resizeObserver.observe(stage);
+      images.forEach((image) => {
+        if (image.complete) return;
+        const onImageLoad = (): void => scheduleRefresh();
+        incompleteImageLoadListeners.push({ image, listener: onImageLoad });
+        image.addEventListener('load', onImageLoad, { once: true });
+      });
+      void document.fonts?.ready.then(() => {
+        if (!disposed) scheduleRefresh();
+      });
+      scheduleRefresh();
+
+      return () => {
+        disposed = true;
+        cards.forEach((card) => {
+          card.removeEventListener('focus', onFocus);
+        });
+        list.removeEventListener('scroll', onNativeScroll);
+        list.removeEventListener('pointerup', onTouchEnd);
+        resizeObserver?.disconnect();
+        incompleteImageLoadListeners.forEach(({ image, listener }) => {
+          image.removeEventListener('load', listener);
+        });
+        window.cancelAnimationFrame(scrollFrame);
+        window.cancelAnimationFrame(refreshFrame);
+        activeAnimation?.kill();
+        media?.revert();
+      };
+    }, root);
+
+    return () => context.revert();
+  }
+
+  function cleanupTimelines(): void {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+  }
+
+  document.addEventListener('astro:page-load', initTimelines);
+  document.addEventListener('astro:before-swap', cleanupTimelines);
+</script>

@@ -1,0 +1,314 @@
+---
+/**
+ * LanguageSwitcher — V2-14
+ *
+ * Compact FR / EN / IT country-icon control rendered in the top chrome.
+ *
+ * Behaviour:
+ *   - Each option is a `<button>` (not a link): clicking writes a `locale`
+ *     cookie with a 1-year expiry on `path=/`, then plays a premium silk wipe
+ *     before asking Astro ClientRouter to soft-navigate to the same URL.
+ *     A full reload is kept as a robust fallback for SSR cookie refresh.
+ *
+ * Accessibility:
+ *   - Wrapped in `<nav aria-label>` (language selector landmark).
+ *   - Each button exposes an i18n-driven `aria-label` describing the action
+ *     ("Switch to English", etc.) and `aria-pressed` for the active state.
+ *   - Keyboard navigable (native `<button>` elements), focus-visible styles
+ *     inherited from the global stylesheet (gold outline).
+ *
+ * Responsive (mobile-first):
+ *   - Inline compact control; each button is a 44x44px minimum tap target while
+ *     the PNG itself is rendered without crop, border, background or shadow.
+ *
+ * i18n note: aria-labels come from `common.language.*` translation keys
+ * (no hardcoded visible text). The visible labels also come from translations.
+ */
+
+import { Image } from 'astro:assets';
+import { locales } from '../../i18n/config';
+import franceFlag from '../../content/Pictos/france.png';
+import italyFlag from '../../content/Pictos/italy.png';
+import unitedKingdomFlag from '../../content/Pictos/united-kingdom-clean.png';
+
+const currentLocale = Astro.locals.locale;
+const t = Astro.locals.t;
+
+interface Props {
+  /** Optional layout hook. */
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+const flags = { fr: franceFlag, en: unitedKingdomFlag, it: italyFlag };
+const navLabelTemplate = t('common.language.navLabelWithCurrent');
+const navLabelFallback = `${t('common.language.navLabel')}, ${t(`common.language.label.${currentLocale}`)}`;
+const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
+  ? navLabelFallback
+  : navLabelTemplate
+).replace(
+  '{current}',
+  t(`common.language.label.${currentLocale}`),
+);
+---
+
+<nav class:list={['lang-switcher', className]} aria-label={navLabel}>
+  <ul class="lang-switcher__list">
+    {
+      locales.map((loc) => (
+        <li class="lang-switcher__item">
+          <button
+            type="button"
+            class="lang-switcher__btn"
+            data-locale={loc}
+            aria-pressed={loc === currentLocale ? 'true' : 'false'}
+            aria-current={loc === currentLocale ? 'true' : undefined}
+            aria-label={t(`common.language.switchTo.${loc}`)}
+          >
+            <Image
+              class="lang-switcher__flag"
+              src={flags[loc]}
+              alt=""
+              aria-hidden="true"
+              widths={[32, 48, 64]}
+              sizes="32px"
+            />
+            <span class="sr-only">{t(`common.language.label.${loc}`)}</span>
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .lang-switcher {
+    display: block;
+  }
+
+  .lang-switcher__list {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.15rem, 1vw, 0.45rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .lang-switcher__item {
+    flex: 0 0 auto;
+  }
+
+  .lang-switcher__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.35rem;
+    font-family: var(--font-heading);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    opacity: 1;
+    box-shadow: none !important;
+    filter: none;
+    transition:
+      opacity var(--duration-base) var(--ease-luxury),
+      transform var(--duration-base) var(--ease-luxury);
+  }
+
+  .lang-switcher__btn:hover,
+  .lang-switcher__btn:focus-visible {
+    opacity: 0.72 !important;
+    transform: translateY(-1px);
+  }
+
+  .lang-switcher__flag {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    object-position: center;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lang-switcher__btn {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+  import {
+    completeLanguageSwitchTransition,
+    doubleRestoreLanguageSwitchScroll,
+    markLanguageSwitchNavigation,
+    preserveLanguageSwitchViewportLock,
+  } from '../../scripts/languageSwitchState';
+
+  const LANGUAGE_WIPE_COVERED_MS = 1180;
+  const TRANSITION_FALLBACK_MS = 2600;
+  const LANGUAGE_WIPE_EXIT_REMOVE_MS = 980;
+  const HARD_RELOAD_FALLBACK_MS = 10000;
+  const LANGUAGE_WIPE_MARKUP = [
+    '<span class="language-wipe__silk"></span>',
+    '<span class="language-wipe__grain"></span>',
+    '<span class="language-wipe__gleam"></span>',
+    '<span class="language-wipe__thread"></span>',
+  ].join('');
+
+  function ensureLanguageOverlay(): HTMLElement {
+    const existing = document.querySelector<HTMLElement>('[data-language-wipe]');
+    if (existing) return existing;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'language-wipe';
+    overlay.dataset.languageWipe = 'true';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = LANGUAGE_WIPE_MARKUP;
+    document.body.append(overlay);
+    return overlay;
+  }
+
+  function setLocaleCookie(loc: string): void {
+    const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `locale=${encodeURIComponent(loc)}; expires=${expires}; path=/; SameSite=Lax${secure}`;
+  }
+
+  function removeLanguageOverlay(): void {
+    if (document.documentElement.dataset.languageSwitching !== 'true') return;
+
+    doubleRestoreLanguageSwitchScroll();
+
+    const overlays = document.querySelectorAll<HTMLElement>('[data-language-wipe]');
+    if (overlays.length === 0) {
+      window.setTimeout(completeLanguageSwitchTransition, 80);
+      return;
+    }
+
+    overlays.forEach((overlay) => {
+      overlay.classList.add('language-wipe--exit');
+      overlay.classList.remove('language-wipe--active');
+      overlay.classList.remove('language-wipe--covered');
+      window.setTimeout(() => {
+        overlay.remove();
+        if (document.querySelector('[data-language-wipe]')) return;
+        completeLanguageSwitchTransition();
+      }, LANGUAGE_WIPE_EXIT_REMOVE_MS);
+    });
+  }
+
+  function preserveLanguageOverlay(event: Event): void {
+    if (document.documentElement.dataset.languageSwitching !== 'true') return;
+    preserveLanguageSwitchViewportLock(event);
+
+    const swapEvent = event as Event & { newDocument?: Document };
+    const newDocument = swapEvent.newDocument;
+    const newBody = newDocument?.body;
+    if (!newBody) return;
+
+    newDocument.documentElement.dataset.languageSwitching = 'true';
+    newDocument.documentElement.dataset.suppressArrival = 'true';
+
+    const overlay = newDocument.createElement('div');
+    overlay.className = 'language-wipe language-wipe--covered';
+    overlay.dataset.languageWipe = 'true';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = LANGUAGE_WIPE_MARKUP;
+    newBody.append(overlay);
+  }
+
+  async function switchLanguage(loc: string): Promise<void> {
+    if (document.documentElement.dataset.languageSwitching === 'true') return;
+    if (loc === document.documentElement.lang) return;
+    const active = document.querySelector<HTMLButtonElement>(`.lang-switcher__btn[data-locale="${loc}"][aria-current="true"]`);
+    if (active) return;
+    document.documentElement.dataset.languageSwitching = 'true';
+    setLocaleCookie(loc);
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    markLanguageSwitchNavigation(target);
+    const scheduleHardReloadFallback = (): void => {
+      window.setTimeout(() => {
+        if (document.documentElement.dataset.languageSwitching === 'true') window.location.reload();
+      }, HARD_RELOAD_FALLBACK_MS);
+    };
+
+    if (reducedMotion) {
+      scheduleHardReloadFallback();
+      try {
+        await navigate(target, { history: 'replace' });
+      } catch {
+        window.location.reload();
+      }
+      return;
+    }
+
+    const overlay = ensureLanguageOverlay();
+    const runNavigation = (): void => {
+      void navigate(target, { history: 'replace' }).catch(() => window.location.reload());
+    };
+    let navigated = false;
+    const navigateOnce = (): void => {
+      if (navigated) return;
+      navigated = true;
+      overlay.classList.add('language-wipe--covered');
+      runNavigation();
+    };
+    requestAnimationFrame(() => overlay.classList.add('language-wipe--active'));
+
+    window.setTimeout(navigateOnce, LANGUAGE_WIPE_COVERED_MS);
+    window.setTimeout(navigateOnce, TRANSITION_FALLBACK_MS);
+    scheduleHardReloadFallback();
+  }
+
+  /**
+   * Wire up the language switcher buttons.
+   *
+   * Re-runs on every `astro:page-load` (initial load + view-transition
+   * swaps) so the Menu's buttons are always bound.
+   */
+  function initLanguageSwitcher(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.lang-switcher__btn');
+    buttons.forEach((btn) => {
+      if (btn.dataset.bound === 'true') return;
+      btn.dataset.bound = 'true';
+      btn.addEventListener('pointerdown', (event) => {
+        event.stopPropagation();
+      });
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const loc = btn.dataset.locale;
+        if (!loc) return;
+        if (loc === document.documentElement.lang) return;
+        if (btn.getAttribute('aria-current') === 'true' || btn.getAttribute('aria-pressed') === 'true') return;
+        void switchLanguage(loc);
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    removeLanguageOverlay();
+    initLanguageSwitcher();
+  });
+
+  if (document.documentElement.dataset.languageOverlayPreserverBound !== 'true') {
+    document.documentElement.dataset.languageOverlayPreserverBound = 'true';
+    document.addEventListener('astro:before-swap', preserveLanguageOverlay);
+  }
+</script>

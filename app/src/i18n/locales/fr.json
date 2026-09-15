@@ -1,0 +1,223 @@
+{
+  "accueil": {
+    "hero": {
+      "tagline": "BRODERIE DE LUXE DEPUIS 1997"
+    },
+    "intro": {
+      "p1": "Forte d'une expérience de plus de 30 ans dans la programmation textile, **Fil'ing Broderies**, créée en 1997, a toujours eu le désir de développer la broderie sous toutes ses formes.",
+      "p2": "Notre mission ?\nRelever les défis de la personnalisation de vos produits, de la **pièce unique** à la **grande série**."
+    },
+    "services": {
+      "creation": "Création",
+      "production": "Production"
+    },
+    "expertise": {
+      "p1": "Partenaire des plus grandes maisons de luxe et du haut de gamme, nous proposons nos compétences à différents secteurs tel que la **maroquinerie**, le **prêt à porter**, les **accessoires**, l'**ameublement**, le **balnéaire**, l'**évènementiel**, le **packaging...**"
+    },
+    "teaser": {
+      "title": "Découvrez notre galerie"
+    },
+    "timeline": {
+      "regionLabel": "Timeline — étapes clés de Fil'ing Broderies",
+      "milestoneLabel": "Étape {year}",
+      "milestones": {
+        "y1994": "Un premier repère dans cette chronologie à préciser.",
+        "y1997": "Un repère fondateur de l'histoire de l'atelier.",
+        "y2001": "Une étape de développement à documenter.",
+        "y2005": "Un jalon de création à compléter.",
+        "y2011": "Une évolution de savoir-faire à préciser.",
+        "y2013": "Un nouveau chapitre de l'atelier à documenter.",
+        "y2015": "Un repère de production à compléter.",
+        "y2023": "Une étape récente à préciser.",
+        "y2024": "Le dernier repère de cette chronologie à documenter."
+      },
+      "imageAlt": {
+        "y1994": "Aperçu textile pour le repère 1994",
+        "y1997": "Aperçu de broderie pour le repère 1997",
+        "y2001": "Aperçu de matière brodée pour le repère 2001",
+        "y2005": "Aperçu de détail textile pour le repère 2005",
+        "y2011": "Aperçu de broderie pour le repère 2011",
+        "y2013": "Aperçu de matière textile pour le repère 2013",
+        "y2015": "Aperçu de détail brodé pour le repère 2015",
+        "y2023": "Aperçu textile pour le repère 2023",
+        "y2024": "Aperçu de broderie pour le repère 2024"
+      }
+    },
+    "values": {
+      "fabrication": {
+        "title": "**FABRICATION FRANÇAISE**",
+        "description": "L'intégralité de nos productions est réalisée au sein de nos ateliers en France, à proximité de Lyon en région Auvergne-Rhône-Alpes, berceau historique de la tradition textile."
+      },
+      "patrimoine": {
+        "title": "**ENTREPRISE DU PATRIMOINE VIVANT**",
+        "description": "Fil'ing Broderies est, depuis 2023, fière d'être labellisée \"Entreprise du Patrimoine Vivant\" par la préfecture de la région Auvergne-Rhône-Alpes."
+      },
+      "valeurs": {
+        "title": "**NOS VALEURS**",
+        "description": "L'implication, l'engagement et surtout l'envie de tous les membres des équipes sont des préoccupations essentielles à la vie de notre entreprise."
+      }
+    }
+  },
+  "creation": {
+    "hero": { "title": "CRÉATION" },
+    "intro": {
+      "p1": "Nous développons vos projets, qu'ils soient sur plans, patrons, fichiers numériques, ou simplement lors d'échanges, toujours en essayant d'être **au plus près de vos souhaits.**",
+      "p2": "Notre métier, en constante évolution, impose un suivi permanent des tendances et innovations.\nNotre remise en question **permanente** permet de vous présenter des solutions **innovantes** au plus près de vos attentes.",
+      "p3": "Notre département **Recherche & Développement** sera heureux de répondre à toutes vos demandes."
+    },
+    "gallery": {
+      "alt1": "Détail de broderie multi-techniques",
+      "alt2": "Échantillon textile de création",
+      "alt3": "Motif brodé en cours de développement",
+      "alt4": "Composition de matières et de fils",
+      "alt5": "Détail d'un travail de broderie",
+      "alt6": "Échantillon de création textile"
+    },
+    "facts": {
+      "dev": {
+        "title": "**5 POSTES DE DÉVELOPPEMENTS**",
+        "description": "Pour donner vie à vos idées"
+      },
+      "couleurs": {
+        "title": "**+ DE 2000 RÉFÉRENCES DE COULEURS DE FILS**",
+        "description": "Permettant un large choix pour répondre au plus proche de votre projet"
+      }
+    }
+  },
+  "production": {
+    "hero": { "title": "PRODUCTION" },
+    "intro": {
+      "p1": "L'exigence de nos clients nous oblige à la performance.",
+      "p2": "Nous nous devons de garantir une production de **qualité** dans les délais, en effectuant un contrôle qualité à **chaque étape** de la chaîne de production et en dialoguant en permanence avec les sites de fabrication."
+    },
+    "gallery": {
+      "alt1": "Détail de matière matelassée",
+      "alt2": "Échantillon de broderie de production",
+      "alt3": "Détail d'un motif brodé",
+      "alt4": "Matière préparée pour la production",
+      "alt5": "Contrôle visuel d'une finition textile",
+      "alt6": "Échantillon textile fini"
+    },
+    "facts": {
+      "surface": { "title": "**3200m²**", "description": "De bâtiment récent" },
+      "preparation": {
+        "title": "**PRÉPARATION ET FINITION**",
+        "description": "Un pôle de préparation matière équipé de refendeuses, gutteuses et presses à chaud ainsi qu'un pôle de finition contrôle qualité"
+      },
+      "tetes": {
+        "title": "**99 TÊTES DE BRODERIE**",
+        "description": "Divisées en un atelier dédié à l'échantillonnage et un dédié à la production de grandes séries"
+      },
+      "decoupe": {
+        "title": "**3 MACHINES DE DÉCOUPE**",
+        "description": "2 découpes lasers et 1 table numérique à reconnaissance de formes"
+      }
+    },
+    "finishing": {
+      "p1": "La finition est la touche finale **indispensable** à notre travail pour une qualité **irréprochable**.",
+      "p2": "C'est un métier à part entière qui nécessite un oeil **précis** et une grande **minutie** du geste.\nPoint après point, notre atelier apporte le soin final à vos produits."
+    }
+  },
+  "galerie": {
+    "hero": { "title": "GALERIE" },
+    "selector": {
+      "label": "Catégories de broderie",
+      "selectedHint": "Catégorie sélectionnée"
+    },
+    "images": {
+      "placeholder": "{category} — motif {number}",
+      "sample": "{category} — détail d'échantillon textile {number}"
+    },
+    "categories": {
+      "traditionnelle": "Traditionnelle",
+      "3d": "3D",
+      "cornely": "Cornely",
+      "macrame": "Macramé",
+      "coiling": "Coiling",
+      "perles": "Perles",
+      "multi-techniques": "Multi-techniques",
+      "sequins": "Sequins",
+      "tuffetage": "Tuffetage",
+      "smock": "Smock",
+      "matelasse": "Matelassé",
+      "applications": "Applications",
+      "patchs": "Patchs",
+      "all-over": "All-over",
+      "patchwork": "Patchwork",
+      "decoupe": "Découpe",
+      "gros-fil": "Gros fil"
+    }
+  },
+  "common": {
+    "meta": {
+      "title": "Fil'ing Broderies — Broderie de luxe depuis 1997",
+      "description": "Fil'ing Broderies — Manufacture française de broderie de luxe. Création et production pour les grandes maisons du luxe et du haut de gamme."
+    },
+    "skipToContent": "Aller au contenu",
+    "brand": { "name": "Fil'ing Broderies" },
+    "sectionLabels": {
+      "intro": "Introduction",
+      "services": "Services",
+      "expertise": "Expertise",
+      "timeline": "Timeline — étapes clés",
+      "values": "Nos valeurs",
+      "gallery": "Galerie",
+      "facts": "Chiffres clés",
+      "carousel": "Carrousel d'images",
+      "finishing": "Finition",
+      "categories": "Catégories de broderie"
+    },
+    "gallery": {
+      "dialogLabel": "Visionneuse d'image",
+      "closeLabel": "Fermer la visionneuse",
+      "openLabel": "Agrandir l'image"
+    },
+    "carousel": {
+      "regionLabel": "Galerie d'images à faire défiler",
+      "dialogLabel": "Visionneuse d'image",
+      "closeLabel": "Fermer la visionneuse",
+      "openLabel": "Agrandir l'image"
+    },
+    "bigcarousel": {
+      "regionLabel": "Carrousel d'images",
+      "prevLabel": "Image précédente",
+      "nextLabel": "Image suivante",
+      "goToImage": "Aller à l'image"
+    },
+    "menu": {
+      "accueil": "Accueil",
+      "creation": "Création",
+      "production": "Production",
+      "galerie": "Galerie",
+      "triggerLabel": "Ouvrir le menu de navigation",
+      "closeLabel": "Fermer le menu de navigation",
+      "dialogLabel": "Menu de navigation"
+    },
+    "language": {
+      "navLabel": "Sélecteur de langue",
+      "navLabelWithCurrent": "Sélecteur de langue, langue actuelle : {current}",
+      "label": { "fr": "FR", "en": "EN", "it": "IT" },
+      "switchTo": {
+        "fr": "Choisir la langue française",
+        "en": "Choisir la langue anglaise",
+        "it": "Choisir la langue italienne"
+      }
+    },
+    "footer": {
+      "contact": "CONTACT",
+      "trajet": "TRAJET DEPUIS",
+      "gare": "Gare TGV Lyon Part-Dieu",
+      "aeroport": "Aéroport et Gare TGV Lyon Saint-Exupéry",
+      "copyright": "2026 Fil'ing Broderies. © Tous droits réservés. Fait par Nicolas et Emilie.",
+      "sitemapLabel": "Plan du site",
+      "aria": {
+        "mail": "Envoyer un email à Fil'ing Broderies",
+        "adresse": "Localiser Fil'ing Broderies sur la carte",
+        "instagram": "Instagram de Fil'ing Broderies (ouvre dans un nouvel onglet)",
+        "linkedin": "LinkedIn de Fil'ing Broderies (ouvre dans un nouvel onglet)",
+        "gare": "Gare TGV Lyon Part-Dieu",
+        "aeroport": "Aéroport et Gare TGV Lyon Saint-Exupéry"
+      }
+    }
+  }
+}

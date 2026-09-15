@@ -1,0 +1,251 @@
+---
+/**
+ * Accueil (Home) — US-12 hero + US-13 body sections
+ *
+ * Composes the fullscreen video hero and the static body sections:
+ *   1. Intro (2 centered paragraphs, bold segments parsed)
+ *   2. Services (2 ImageCards → Création / Production)
+ *   3. Expertise (centered paragraph, bold segments parsed)
+ *   4. Timeline (interactive milestones)
+ *   5. Company values (3 ValueBlocks)
+ *   6. Teaser (full-width call-to-action → Galerie)
+ *
+ * All visible text comes from i18n `t()`. Images use placeholders except for
+ * the real ValueBlock pictos. `--content-max` is respected on every
+ * section except the hero and the teaser (both explicitly full-width).
+ * Vertical rhythm uses `--space-section`.
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { parseBold } from '../i18n/t';
+import Hero from '../components/sections/accueil/Hero.astro';
+import HomeScrollStroke from '../components/sections/accueil/HomeScrollStroke.astro';
+import ImageCard from '../components/ui/ImageCard.astro';
+import Timeline from '../components/ui/Timeline.astro';
+import ValueBlock from '../components/ui/ValueBlock.astro';
+import Teaser from '../components/ui/Teaser.astro';
+import { timelineMilestones } from '../data/timeline';
+import imageCardCreation from '../content/Médias/Showroom/Broderie/Macramé/P1001447.JPG';
+import imageCardProduction from '../content/Médias/Showroom/Broderie/Tuffetage/P1001195.JPG';
+import teaserImg from '../content/Médias/Showroom/Broderie/Patchwork/P1000715.JPG';
+// ValueBlock logos — real pictos from src/content/Pictos/ (V2-01).
+import iconFabrication from '../content/Pictos/made_in_france.png';
+// No approved orange patrimoine picto exists yet; use the requested temporary
+// made-in-France reference so the illustrated grid remains visually coherent.
+import iconPatrimoine from '../content/Pictos/made_in_france.png';
+import iconValeurs from '../content/Pictos/valeurs.png';
+
+const t = Astro.locals.t;
+---
+
+<BaseLayout footerFlush>
+  <!-- US-12: fullscreen video hero (full-width, breaks content-max) -->
+  <Hero />
+
+  <!-- US-13: body sections -->
+
+  <div class="home-thread-region" data-home-thread-region>
+    <HomeScrollStroke />
+
+    <!-- 1. Intro — 2 centered paragraphs with bold segments -->
+    <section class="content-max section-intro" aria-label={t('common.sectionLabels.intro')}>
+      <div class="section-intro__inner">
+        <p
+          class="section-intro__p"
+          data-reveal
+          data-reveal-style="atelier-lines"
+          set:html={parseBold(t('accueil.intro.p1'))}
+        />
+        <p
+          class="section-intro__p"
+          data-reveal
+          data-reveal-style="atelier-lines"
+          data-reveal-delay="0.18"
+          set:html={parseBold(t('accueil.intro.p2'))}
+        />
+      </div>
+    </section>
+
+    <!-- 2. Services — 2 ImageCards (Création / Production) -->
+    <section class="content-max section-services" aria-label={t('common.sectionLabels.services')}>
+      <div class="section-services__grid">
+        <div data-reveal data-reveal-delay="0">
+          <ImageCard
+            title={t('accueil.services.creation')}
+            image={imageCardCreation}
+            href="/creation"
+          />
+        </div>
+        <div data-reveal data-reveal-delay="0.12">
+          <ImageCard
+            title={t('accueil.services.production')}
+            image={imageCardProduction}
+            href="/production"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Expertise — centered paragraph with bold segments -->
+    <section class="content-max section-expertise" aria-label={t('common.sectionLabels.expertise')}>
+      <p
+        class="section-expertise__p"
+        data-home-thread-terminal-content
+        data-reveal
+        data-reveal-style="embroidered-words"
+        set:html={parseBold(t('accueil.expertise.p1'))}
+      />
+    </section>
+  </div>
+
+  <!-- 4. Timeline — interactive milestone accordion -->
+  <section
+    class="content-max section-timeline"
+    data-home-thread-end
+    aria-label={t('common.sectionLabels.timeline')}
+  >
+    <h2 class="sr-only">{t('common.sectionLabels.timeline')}</h2>
+    <Timeline milestones={timelineMilestones} />
+  </section>
+
+  <!-- 5. Company values — 3 ValueBlocks -->
+  <section class="content-max section-values" aria-label={t('common.sectionLabels.values')}>
+    <h2 class="sr-only">{t('common.sectionLabels.values')}</h2>
+    <div class="section-values__grid">
+      <div data-reveal data-reveal-delay="0">
+        <ValueBlock
+          logo={iconFabrication}
+          logoVariant="orange"
+          title={t('accueil.values.fabrication.title')}
+          description={t('accueil.values.fabrication.description')}
+        />
+      </div>
+      <div data-reveal data-reveal-delay="0.1">
+        <ValueBlock
+          logo={iconPatrimoine}
+          logoVariant="orange"
+          title={t('accueil.values.patrimoine.title')}
+          description={t('accueil.values.patrimoine.description')}
+        />
+      </div>
+      <div data-reveal data-reveal-delay="0.2">
+        <ValueBlock
+          logo={iconValeurs}
+          logoVariant="orange"
+          title={t('accueil.values.valeurs.title')}
+          description={t('accueil.values.valeurs.description')}
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Teaser — full-width call-to-action (breaks content-max) -->
+  <Teaser
+    title={t('accueil.teaser.title')}
+    url="/galerie"
+    image={teaserImg}
+    objectPosition="center 46%"
+    mobileObjectPosition="58% 42%"
+  />
+</BaseLayout>
+
+<style>
+  .home-thread-region {
+    --home-thread-decorative-layer: 0;
+    --home-thread-content-layer: 1;
+
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  .home-thread-region > section {
+    position: relative;
+    z-index: var(--home-thread-content-layer);
+  }
+
+  /* ---- Shared section rhythm ---- */
+  .section-intro,
+  .section-services,
+  .section-expertise,
+  .section-timeline,
+  .section-values {
+    padding-block: var(--space-section);
+  }
+
+  /* ---- Intro ---- */
+  .section-intro__inner {
+    max-width: 60ch;
+    margin-inline: auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .section-intro__p {
+    font-size: var(--text-lg);
+    line-height: 1.8;
+    color: var(--color-charcoal);
+    text-wrap: pretty;
+  }
+
+  .section-intro__p :global(strong) {
+    font-weight: 600;
+    color: var(--color-charcoal);
+  }
+
+  /* ---- Services ---- */
+  .section-services__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-component);
+  }
+
+  @media (min-width: 768px) {
+    .section-services__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* ---- Expertise ---- */
+  .section-expertise__p {
+    max-width: 60ch;
+    margin-inline: auto;
+    text-align: center;
+    font-size: var(--text-lg);
+    line-height: 1.8;
+    color: var(--color-charcoal);
+    text-wrap: pretty;
+  }
+
+  .section-expertise__p :global(strong) {
+    font-weight: 600;
+    color: var(--color-charcoal);
+  }
+
+  /* ---- Values ---- */
+  .section-values__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-component);
+  }
+
+  .section-values__grid > [data-reveal] {
+    display: flex;
+    height: 100%;
+  }
+
+  .section-values__grid > [data-reveal] :global(.value-block) {
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .section-values__grid {
+      grid-template-columns: repeat(3, 1fr);
+      align-items: stretch;
+    }
+  }
+</style>

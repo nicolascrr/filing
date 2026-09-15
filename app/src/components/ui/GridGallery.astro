@@ -1,0 +1,560 @@
+---
+/**
+ * GridGallery — US-15
+ *
+ * Irregular masonry gallery with a custom single-image lightbox.
+ *
+ * Layout (CSS Grid, no library — per D4):
+ *   - Mobile (base): 2-column simple grid, uniform-ish tiles (masonry
+ *     simplification acceptable on small screens per AGENTS.md).
+ *   - `md` (tablet): 3-column masonry with data-driven spans.
+ *   - `lg` (desktop): 6-column grid, `grid-auto-flow: dense`, full irregular
+ *     mosaic driven by each image's `colSpan` / `rowSpan` hints.
+ *
+ * Lightbox (custom, no carousel):
+ *   - Clicking (or activating via keyboard) a thumbnail opens a dialog
+ *     showing ONLY that image, enlarged (max 90vw / 90vh, object-contain).
+ *   - The `animation` prop controls the reveal: `fade` | `zoom` | `slide`
+ *     (opacity/transform only, respects `prefers-reduced-motion`).
+ *
+ * Accessibility (critical):
+ *   - Each thumbnail is a `<button>` wrapping a `<figure>` (keyboard + click).
+ *   - The lightbox is `role="dialog"` `aria-modal="true"` with `aria-label`.
+ *   - Focus trap while open, Esc closes, backdrop click closes, visible close
+ *     button (min 44x44px, top-right) with `aria-label`.
+ *   - Focus returns to the triggering thumbnail on close.
+ *   - Body scroll locked while open (`document.body.style.overflow = 'hidden'`),
+ *     restored on close — works on mobile too.
+ *
+ * Re-binding:
+ *   - The vanilla `<script>` re-initialises on `astro:page-load` (the project
+ *     uses Astro `ClientRouter` view transitions — see BaseLayout). Each
+ *     gallery root is wired once (idempotent).
+ *
+ * All visible UI strings come from `Astro.locals.t` (`common.gallery.*`).
+ */
+
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+export interface GalleryImage {
+  /** Imported asset (Astro `<Image>` optimised). */
+  src: ImageMetadata;
+  /** Alt text — required for accessibility. */
+  alt: string;
+  /** Optional masonry column-span hint (CSS grid units). */
+  colSpan?: 1 | 2;
+  /** Optional masonry row-span hint (CSS grid units). */
+  rowSpan?: 1 | 2;
+}
+
+export interface Props {
+  /** Gallery images. */
+  images: GalleryImage[];
+  /** Lightbox reveal animation style. */
+  animation?: 'fade' | 'zoom' | 'slide';
+  /** Optional layout override class. */
+  class?: string;
+}
+
+const { images, animation = 'fade', class: className } = Astro.props;
+
+const t = Astro.locals.t;
+const dialogLabel = t('common.gallery.dialogLabel');
+const closeLabel = t('common.gallery.closeLabel');
+const openLabel = t('common.gallery.openLabel');
+---
+
+<div class:list={['grid-gallery', className]} data-grid-gallery data-animation={animation}>
+  <ul class="grid-gallery__grid">
+    {
+      images.map((img, i) => (
+        <li
+          class="grid-gallery__item"
+          style={`--col-span: ${img.colSpan ?? 1}; --row-span: ${img.rowSpan ?? 1};`}
+        >
+          <button
+            type="button"
+            class="grid-gallery__thumb"
+            data-grid-thumb
+            data-index={i}
+            data-full-src={img.src.src}
+            data-alt={img.alt}
+            aria-label={`${openLabel} — ${img.alt}`}
+          >
+            <figure class="grid-gallery__figure">
+              <Image
+                src={img.src}
+                alt={img.alt}
+                widths={[200, 400, 600, 800]}
+                sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 17vw"
+                class="grid-gallery__img"
+                loading="lazy"
+              />
+            </figure>
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+
+  <!-- Lightbox (single shared dialog, image swapped on open) -->
+  <div
+    class="grid-gallery__lightbox"
+    data-grid-lightbox
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-label={dialogLabel}
+    aria-hidden="true"
+  >
+    <div class="grid-gallery__backdrop" data-grid-backdrop></div>
+    <button type="button" class="grid-gallery__close" data-grid-close aria-label={closeLabel}>
+      <span aria-hidden="true" class="grid-gallery__close-icon">&times;</span>
+    </button>
+    <img class="grid-gallery__enlarged" data-grid-enlarged alt="" src="" />
+  </div>
+</div>
+
+<style>
+  /* ---- Grid (mobile-first) ---- */
+  .grid-gallery__grid {
+    display: grid;
+    width: 100%;
+    /* Mobile: 2-column simple grid, uniform-ish tiles. */
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: auto;
+    grid-auto-flow: dense;
+    gap: clamp(0.5rem, 2vw, 1rem);
+  }
+
+  .grid-gallery__item {
+    /* Mobile: ignore span hints — uniform tiles. */
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+
+  /* Tablet: 3-column masonry with data-driven spans. */
+  @media (min-width: 768px) {
+    .grid-gallery__grid {
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 160px;
+    }
+    .grid-gallery__item {
+      grid-column: span var(--col-span, 1);
+      grid-row: span var(--row-span, 1);
+    }
+  }
+
+  /* Desktop: 6-column full irregular mosaic. */
+  @media (min-width: 1024px) {
+    .grid-gallery__grid {
+      grid-template-columns: repeat(6, 1fr);
+      grid-auto-rows: 140px;
+    }
+  }
+
+  /* ---- Thumbnail ---- */
+  .grid-gallery__thumb {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-warm-white);
+    cursor: pointer;
+    transition: transform var(--duration-base) var(--ease-luxury);
+  }
+  .grid-gallery__thumb:hover,
+  .grid-gallery__thumb:focus-visible {
+    transform: scale(1.015);
+  }
+
+  .grid-gallery__figure {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  .grid-gallery__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Mobile: give uniform-ish tiles a consistent shape. */
+    aspect-ratio: 1 / 1;
+    transition:
+      transform var(--duration-base) var(--ease-luxury),
+      filter var(--duration-base) var(--ease-luxury);
+    will-change: transform;
+  }
+  /* On larger screens the grid cell dictates the size; drop the forced
+     aspect ratio so spans fill their cells cleanly. */
+  @media (min-width: 768px) {
+    .grid-gallery__img {
+      aspect-ratio: auto;
+    }
+  }
+
+  /* Subtle scrim on hover for a luxury feel. */
+  .grid-gallery__thumb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+    background: rgba(43, 43, 43, 0);
+    pointer-events: none;
+    transition: background var(--duration-base) var(--ease-luxury);
+  }
+  .grid-gallery__thumb:hover::after,
+  .grid-gallery__thumb:focus-visible::after {
+    background: rgba(43, 43, 43, 0.12);
+  }
+
+  /* ---- Lightbox ---- */
+  .grid-gallery__lightbox {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100svh;
+    height: 100dvh;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    --lightbox-padding: clamp(1rem, 4vw, 3rem);
+    padding: var(--lightbox-padding);
+    padding-top: max(var(--lightbox-padding), env(safe-area-inset-top));
+    padding-right: max(var(--lightbox-padding), env(safe-area-inset-right));
+    padding-bottom: max(var(--lightbox-padding), env(safe-area-inset-bottom));
+    padding-left: max(var(--lightbox-padding), env(safe-area-inset-left));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-base) var(--ease-luxury);
+  }
+  .grid-gallery__lightbox[hidden] {
+    display: none;
+  }
+  .grid-gallery__lightbox[data-open] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .grid-gallery__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(43, 43, 43, 0.85);
+    backdrop-filter: blur(2px);
+    opacity: 1;
+  }
+
+  .grid-gallery__enlarged {
+    display: block;
+    position: relative;
+    z-index: 1;
+    max-width: calc(100vw - (var(--lightbox-padding) * 2));
+    max-height: calc(100vh - (var(--lightbox-padding) * 2));
+    max-height: calc(100svh - (var(--lightbox-padding) * 2));
+    max-height: calc(100dvh - (var(--lightbox-padding) * 2));
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transition:
+      opacity var(--duration-base) var(--ease-luxury),
+      transform var(--duration-base) var(--ease-luxury);
+    will-change: transform, opacity;
+  }
+  .grid-gallery__lightbox[data-open] .grid-gallery__enlarged {
+    opacity: 1;
+  }
+
+  /* Reveal animation variants (transform/opacity only). */
+  .grid-gallery__lightbox[data-animation='zoom'] .grid-gallery__enlarged {
+    transform: scale(0.9);
+  }
+  .grid-gallery__lightbox[data-animation='slide'] .grid-gallery__enlarged {
+    transform: translateY(24px);
+  }
+  .grid-gallery__lightbox[data-open][data-animation='zoom'] .grid-gallery__enlarged,
+  .grid-gallery__lightbox[data-open][data-animation='slide'] .grid-gallery__enlarged {
+    transform: scale(1) translateY(0);
+  }
+
+  /* ---- Close button (min 44x44px, top-right) ---- */
+  .grid-gallery__close {
+    position: absolute;
+    top: clamp(0.75rem, 3vw, 1.5rem);
+    right: clamp(0.75rem, 3vw, 1.5rem);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--color-warm-white);
+    border-radius: 50%;
+    background: rgba(43, 43, 43, 0.4);
+    transition:
+      color var(--duration-base) var(--ease-luxury),
+      background var(--duration-base) var(--ease-luxury);
+  }
+
+  @media (max-width: 639px) {
+    .grid-gallery__lightbox {
+      --lightbox-padding: 1rem;
+    }
+
+    .grid-gallery__enlarged {
+      max-width: calc(100vw - 2rem);
+      max-height: calc(100vh - 2rem);
+      max-height: calc(100svh - 2rem);
+    }
+  }
+  .grid-gallery__close:hover,
+  .grid-gallery__close:focus-visible {
+    color: var(--color-gold);
+    background: rgba(43, 43, 43, 0.7);
+  }
+
+  /* ---- Reduced motion ---- */
+  @media (prefers-reduced-motion: reduce) {
+    .grid-gallery__thumb,
+    .grid-gallery__thumb::after,
+    .grid-gallery__img,
+    .grid-gallery__backdrop,
+    .grid-gallery__lightbox,
+    .grid-gallery__enlarged,
+    .grid-gallery__close {
+      transition: none;
+    }
+    .grid-gallery__lightbox[data-animation='zoom'] .grid-gallery__enlarged,
+    .grid-gallery__lightbox[data-animation='slide'] .grid-gallery__enlarged {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * GridGallery lightbox logic (vanilla, framework-free).
+   *
+   * Re-bound on every `astro:page-load` so the freshly swapped DOM is wired
+   * up after a view transition. Each gallery root is initialised once
+   * (idempotent).
+   */
+  type Cleanup = () => void;
+
+  const galleryCleanups: Cleanup[] = [];
+
+  function initGridGallery(): void {
+    cleanupGridGalleries();
+    const roots = document.querySelectorAll<HTMLElement>('[data-grid-gallery]');
+    roots.forEach((root) => {
+      const lightbox = root.querySelector<HTMLElement>('[data-grid-lightbox]');
+      const backdrop = root.querySelector<HTMLElement>('[data-grid-backdrop]');
+      const closeBtn = root.querySelector<HTMLButtonElement>('[data-grid-close]');
+      const enlarged = root.querySelector<HTMLImageElement>('[data-grid-enlarged]');
+      const thumbs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-grid-thumb]'));
+      if (!lightbox || !enlarged) return;
+
+      let open = false;
+      let lastFocused: HTMLElement | null = null;
+      let hideTimer: ReturnType<typeof window.setTimeout> | null = null;
+      let pendingHide: ((event: Event) => void) | null = null;
+      let savedBodyOverflow: string | null = null;
+      let savedDocumentOverflow: string | null = null;
+      let savedScrollX = 0;
+      let savedScrollY = 0;
+      let scrollLocked = false;
+      let originalParent: ParentNode | null = null;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      const publishLightboxState = (isOpen: boolean): void => {
+        if (isOpen) document.documentElement.dataset.lightboxOpen = 'true';
+        else delete document.documentElement.dataset.lightboxOpen;
+        document.dispatchEvent(
+          new CustomEvent('site:lightbox-state', { detail: { open: isOpen } }),
+        );
+      };
+      const lockScroll = (): void => {
+        if (scrollLocked) return;
+        scrollLocked = true;
+        savedBodyOverflow = document.body.style.overflow;
+        savedDocumentOverflow = document.documentElement.style.overflow;
+        savedScrollX = window.scrollX;
+        savedScrollY = window.scrollY;
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+      };
+      const unlockScroll = (): void => {
+        if (!scrollLocked) return;
+        scrollLocked = false;
+        document.body.style.overflow = savedBodyOverflow ?? '';
+        document.documentElement.style.overflow = savedDocumentOverflow ?? '';
+        const scrollBehavior = document.documentElement.style.scrollBehavior;
+        document.documentElement.style.scrollBehavior = 'auto';
+        window.scrollTo(savedScrollX, savedScrollY);
+        document.documentElement.style.scrollBehavior = scrollBehavior;
+        savedBodyOverflow = null;
+        savedDocumentOverflow = null;
+      };
+
+      /** Focusable elements inside the lightbox (for the focus trap). */
+      const focusables = (): HTMLElement[] => {
+        return Array.from(
+          lightbox.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((el) => el.offsetParent !== null);
+      };
+
+      const openLightbox = (thumb: HTMLButtonElement): void => {
+        if (open) return;
+        if (hideTimer !== null) window.clearTimeout(hideTimer);
+        if (pendingHide) lightbox.removeEventListener('transitionend', pendingHide);
+        hideTimer = null;
+        pendingHide = null;
+        open = true;
+        lastFocused = thumb;
+
+        const fullSrc = thumb.dataset.fullSrc ?? '';
+        const alt = thumb.dataset.alt ?? '';
+        enlarged.src = fullSrc;
+        enlarged.alt = alt;
+
+        // Keep the fixed dialog attached to <body>. Some animated/revealed
+        // ancestors use transforms, which would otherwise create a containing
+        // block for position: fixed and shift the desktop centering upward.
+        originalParent = lightbox.parentNode;
+        document.body.append(lightbox);
+
+        lightbox.hidden = false;
+        lightbox.setAttribute('aria-hidden', 'false');
+        // Force reflow so the CSS transition runs from the hidden state.
+        void lightbox.offsetWidth;
+        lightbox.dataset.open = '';
+
+        lockScroll();
+        publishLightboxState(true);
+
+        // Move focus to the close button (first focusable in the dialog).
+        const f = focusables();
+        (f[0] ?? closeBtn ?? lightbox).focus();
+      };
+
+      const closeLightbox = (restoreFocus = true): void => {
+        if (!open) return;
+        open = false;
+        delete lightbox.dataset.open;
+        lightbox.setAttribute('aria-hidden', 'true');
+
+        const hide = (): void => {
+          if (lightbox.hidden) return;
+          lightbox.hidden = true;
+          enlarged.src = '';
+          enlarged.alt = '';
+          if (originalParent) originalParent.appendChild(lightbox);
+          originalParent = null;
+          if (pendingHide) lightbox.removeEventListener('transitionend', pendingHide);
+          if (hideTimer !== null) {
+            window.clearTimeout(hideTimer);
+            hideTimer = null;
+          }
+          pendingHide = null;
+          unlockScroll();
+          publishLightboxState(false);
+          if (restoreFocus && lastFocused) lastFocused.focus({ preventScroll: true });
+        };
+        if (reducedMotion.matches) {
+          hide();
+          return;
+        }
+        pendingHide = (event: Event): void => {
+          if (event.target !== lightbox) return;
+          hide();
+        };
+        lightbox.addEventListener('transitionend', pendingHide);
+        hideTimer = window.setTimeout(hide, 700);
+      };
+
+      // Thumbnail activation (click + keyboard Enter/Space via button default).
+      const thumbHandlers = thumbs.map((thumb) => {
+        const onThumbClick = (): void => openLightbox(thumb);
+        thumb.addEventListener('click', onThumbClick);
+        return { thumb, onThumbClick };
+      });
+
+      // Close interactions.
+      const onCloseClick = (): void => closeLightbox();
+      const onBackdropClick = (): void => closeLightbox();
+      closeBtn?.addEventListener('click', onCloseClick);
+      backdrop?.addEventListener('click', onBackdropClick);
+
+      // Esc to close + focus trap (delegated on the lightbox root).
+      const onLightboxKeydown = (e: KeyboardEvent): void => {
+        if (!open) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeLightbox();
+          return;
+        }
+        if (e.key === 'Tab') {
+          const f = focusables();
+          if (f.length === 0) return;
+          const first = f[0];
+          const last = f[f.length - 1];
+          const active = document.activeElement as HTMLElement;
+          if (e.shiftKey && active === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && active === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      };
+      lightbox.addEventListener('keydown', onLightboxKeydown);
+
+      galleryCleanups.push(() => {
+        if (hideTimer !== null) window.clearTimeout(hideTimer);
+        if (pendingHide) lightbox.removeEventListener('transitionend', pendingHide);
+        thumbHandlers.forEach(({ thumb, onThumbClick }) =>
+          thumb.removeEventListener('click', onThumbClick),
+        );
+        closeBtn?.removeEventListener('click', onCloseClick);
+        backdrop?.removeEventListener('click', onBackdropClick);
+        lightbox.removeEventListener('keydown', onLightboxKeydown);
+        lightbox.hidden = true;
+        delete lightbox.dataset.open;
+        enlarged.src = '';
+        enlarged.alt = '';
+        if (originalParent) originalParent.appendChild(lightbox);
+        originalParent = null;
+        unlockScroll();
+        if (document.documentElement.dataset.lightboxOpen === 'true') publishLightboxState(false);
+        hideTimer = null;
+        pendingHide = null;
+        open = false;
+        lastFocused = null;
+      });
+    });
+  }
+
+  function cleanupGridGalleries(): void {
+    galleryCleanups.splice(0).forEach((cleanup) => cleanup());
+  }
+
+  document.addEventListener('astro:page-load', initGridGallery);
+  document.addEventListener('astro:before-swap', cleanupGridGalleries);
+</script>

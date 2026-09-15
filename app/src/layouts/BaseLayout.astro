@@ -1,0 +1,134 @@
+---
+/**
+ * BaseLayout — Fil'ing Broderies
+ *
+ * Document shell shared by every page. Provides:
+ *   - <html lang> reflecting the active locale (cookie-based, per D1)
+ *   - <head> with meta, title/description (i18n), hreflang alternates,
+ *     font preloads, and Astro ClientRouter for view transitions (per D2)
+ *   - <body> with a single <slot /> for page content
+ *
+ * GSAP lifecycle (documented for US-22 / US-24):
+ *   - `astro:page-load`  → fires after every page load (initial + swaps).
+ *     GSAP islands should initialise/re-init their animations here.
+ *   - `astro:before-swap` → fires before a view-transition swap.
+ *     GSAP islands should call `context.revert()` here to clean up.
+ *   Menu and Footer chrome will be added in Phase 1 (US-07 / US-08).
+ */
+
+import { ClientRouter } from 'astro:transitions';
+import { locales } from '../i18n/config';
+import Menu from '../components/chrome/Menu.astro';
+import Footer from '../components/chrome/Footer.astro';
+import poppinsLatin400 from '@fontsource/poppins/files/poppins-latin-400-normal.woff2?url';
+import notoSansLatin400 from '@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff2?url';
+import '../styles/global.css';
+
+interface Props {
+  /** Optional page title override (otherwise falls back to site default). */
+  title?: string;
+  /** Optional meta description override. */
+  description?: string;
+  /** Removes footer separation for a page ending in a full-bleed section. */
+  footerFlush?: boolean;
+}
+
+const { title, description, footerFlush = false } = Astro.props;
+
+// Locale + translator are resolved by `src/middleware.ts` and exposed via
+// Astro.locals (populated before any page/layout/component frontmatter runs).
+const locale = Astro.locals.locale;
+const t = Astro.locals.t;
+
+// Default site title/description (i18n-driven). Individual pages can override.
+const siteTitle = title ?? t('common.meta.title');
+const siteDescription = description ?? t('common.meta.description');
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{siteTitle}</title>
+    <meta name="description" content={siteDescription} />
+
+    <!-- hreflang alternates for SEO (cookie-based i18n: same URL, all locales) -->
+    {locales.map((l) => <link rel="alternate" hreflang={l} href={Astro.url.href} />)}
+    <link rel="alternate" hreflang="x-default" href={Astro.url.href} />
+
+    <!-- Explicit URL imports let Vite emit hashed production assets. These
+         match the normal Latin faces used for first paint in global.css. -->
+    <link rel="preload" href={poppinsLatin400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={notoSansLatin400} as="font" type="font/woff2" crossorigin />
+
+    <!-- Astro view transitions (Barba.js dropped per D2) -->
+    <ClientRouter />
+  </head>
+  <body>
+    <script is:inline>
+      (() => {
+        const key = 'filing:language-switch';
+        try {
+          const raw = window.sessionStorage.getItem(key);
+          if (!raw) return;
+
+          const state = JSON.parse(raw);
+          const path = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+          if (
+            !state ||
+            state.path !== path ||
+            typeof state.scrollX !== 'number' ||
+            typeof state.scrollY !== 'number' ||
+            typeof state.timestamp !== 'number' ||
+            Date.now() - state.timestamp > 5000
+          ) {
+            window.sessionStorage.removeItem(key);
+            return;
+          }
+
+          if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+          document.documentElement.dataset.languageSwitching = 'true';
+          document.documentElement.dataset.suppressArrival = 'true';
+          document.documentElement.dataset.languageViewportLocked = 'true';
+          document.documentElement.dataset.languageScrollRestoring = 'true';
+          document.documentElement.style.scrollBehavior = 'auto';
+          document.documentElement.style.setProperty('--language-lock-scroll-x', `${state.scrollX}px`);
+          document.documentElement.style.setProperty('--language-lock-scroll-y', `${state.scrollY}px`);
+          document.body.dataset.languageViewportLocked = 'true';
+          document.body.style.scrollBehavior = 'auto';
+          document.body.style.position = 'fixed';
+          document.body.style.inset = '0 auto auto 0';
+          document.body.style.width = '100%';
+          document.body.style.minHeight = '100%';
+          document.body.style.overflow = 'hidden';
+          document.body.style.top = `${-state.scrollY}px`;
+          document.body.style.left = `${-state.scrollX}px`;
+          document.body.style.right = '0';
+          window.scrollTo({ left: state.scrollX, top: state.scrollY, behavior: 'auto' });
+        } catch {
+          // Keep hard-reload fallback non-blocking if storage is unavailable.
+        }
+      })();
+    </script>
+    <a href="#main" class="skip-link">{t('common.skipToContent')}</a>
+    <header class="site-chrome" aria-label={t('common.menu.dialogLabel')}>
+      <Menu />
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <Footer flush={footerFlush} />
+
+    <!--
+      Global animation entry island (US-22 / US-23 / US-24).
+      Bundled by Astro, loaded once and persisted across ClientRouter
+      view transitions. Drives scroll reveals + SplitText headings and
+      cleans up on `astro:before-swap`. The same entry owns the GSAP route
+      choreography around ClientRouter swaps.
+    -->
+    <script src="../scripts/main.ts"></script>
+  </body>
+</html>

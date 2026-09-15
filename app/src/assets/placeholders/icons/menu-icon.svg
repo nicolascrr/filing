@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#2b2b2b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Menu — embroidery thread spool icon">
+  <title>Menu — embroidery thread spool icon</title>
+  <!-- Bobbin / thread spool -->
+  <rect x="7" y="3" width="10" height="18" rx="1.5"/>
+  <line x1="5" y1="6" x2="19" y2="6"/>
+  <line x1="5" y1="18" x2="19" y2="18"/>
+  <!-- Thread wraps -->
+  <line x1="9" y1="9" x2="15" y2="9" stroke="#b8a069"/>
+  <line x1="9" y1="12" x2="15" y2="12" stroke="#b8a069"/>
+  <line x1="9" y1="15" x2="15" y2="15" stroke="#b8a069"/>
+  <!-- Unwinding thread -->
+  <path d="M19 12 C21 12, 21 8, 22 7" stroke="#b8a069"/>
+</svg>

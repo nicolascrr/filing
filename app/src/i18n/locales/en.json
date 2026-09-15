@@ -1,0 +1,223 @@
+{
+  "accueil": {
+    "hero": {
+      "tagline": "LUXURY EMBROIDERY SINCE 1997"
+    },
+    "intro": {
+      "p1": "With over 30 years of experience in textile programming, **Fil'ing Broderies**, founded in 1997, has always been driven by the desire to develop embroidery in all its forms.",
+      "p2": "Our mission?\nTo rise to the challenges of personalising your products, from the **unique piece** to the **large series**."
+    },
+    "services": {
+      "creation": "Creation",
+      "production": "Production"
+    },
+    "expertise": {
+      "p1": "Partner to the greatest luxury houses and high-end brands, we offer our expertise across various sectors such as **leather goods**, **ready-to-wear**, **accessories**, **furnishing**, **swimwear**, **events**, **packaging...**"
+    },
+    "teaser": {
+      "title": "Discover our gallery"
+    },
+    "timeline": {
+      "regionLabel": "Timeline — Fil'ing Broderies milestones",
+      "milestoneLabel": "Milestone {year}",
+      "milestones": {
+        "y1994": "An early marker in this timeline, to be confirmed.",
+        "y1997": "A founding marker in the workshop's story.",
+        "y2001": "A development step to be documented.",
+        "y2005": "A creative milestone to be completed.",
+        "y2011": "An evolution in craftsmanship to be specified.",
+        "y2013": "A new workshop chapter to be documented.",
+        "y2015": "A production marker to be completed.",
+        "y2023": "A recent step to be specified.",
+        "y2024": "The latest marker in this timeline, to be documented."
+      },
+      "imageAlt": {
+        "y1994": "Textile preview for the 1994 marker",
+        "y1997": "Embroidery preview for the 1997 marker",
+        "y2001": "Embroidered material preview for the 2001 marker",
+        "y2005": "Textile detail preview for the 2005 marker",
+        "y2011": "Embroidery preview for the 2011 marker",
+        "y2013": "Textile material preview for the 2013 marker",
+        "y2015": "Embroidered detail preview for the 2015 marker",
+        "y2023": "Textile preview for the 2023 marker",
+        "y2024": "Embroidery preview for the 2024 marker"
+      }
+    },
+    "values": {
+      "fabrication": {
+        "title": "**FRENCH MANUFACTURING**",
+        "description": "All our production is carried out in our workshops in France, near Lyon in the Auvergne-Rhône-Alpes region, the historic cradle of the textile tradition."
+      },
+      "patrimoine": {
+        "title": "**LIVING HERITAGE COMPANY**",
+        "description": "Since 2023, Fil'ing Broderies is proud to hold the \"Entreprise du Patrimoine Vivant\" (Living Heritage Company) label, awarded by the prefecture of the Auvergne-Rhône-Alpes region."
+      },
+      "valeurs": {
+        "title": "**OUR VALUES**",
+        "description": "The involvement, commitment and above all the enthusiasm of every team member are essential concerns in the life of our company."
+      }
+    }
+  },
+  "creation": {
+    "hero": { "title": "CREATION" },
+    "intro": {
+      "p1": "We develop your projects, whether from plans, patterns, digital files, or simply through discussion, always striving to be **as close as possible to your wishes.**",
+      "p2": "Our craft, in constant evolution, demands continuous monitoring of trends and innovations.\nOur **permanent** questioning allows us to present **innovative** solutions that best meet your expectations.",
+      "p3": "Our **Research & Development** department will be happy to answer all your requests."
+    },
+    "gallery": {
+      "alt1": "Multi-technique embroidery detail",
+      "alt2": "Textile creation sample",
+      "alt3": "Embroidered motif in development",
+      "alt4": "Composition of materials and threads",
+      "alt5": "Embroidery work detail",
+      "alt6": "Textile creation sample"
+    },
+    "facts": {
+      "dev": {
+        "title": "**5 DEVELOPMENT STATIONS**",
+        "description": "To bring your ideas to life"
+      },
+      "couleurs": {
+        "title": "**OVER 2000 THREAD COLOUR REFERENCES**",
+        "description": "Offering a wide choice to match your project as closely as possible"
+      }
+    }
+  },
+  "production": {
+    "hero": { "title": "PRODUCTION" },
+    "intro": {
+      "p1": "The demands of our clients compel us to perform.",
+      "p2": "We must guarantee **quality** production on time, by carrying out quality control at **every stage** of the production chain and by maintaining constant dialogue with the manufacturing sites."
+    },
+    "gallery": {
+      "alt1": "Quilted material detail",
+      "alt2": "Production embroidery sample",
+      "alt3": "Embroidered motif detail",
+      "alt4": "Material prepared for production",
+      "alt5": "Visual quality check of a textile finish",
+      "alt6": "Finished textile sample"
+    },
+    "facts": {
+      "surface": { "title": "**3200m²**", "description": "Of recent building" },
+      "preparation": {
+        "title": "**PREPARATION AND FINISHING**",
+        "description": "A material preparation unit equipped with slitting machines, washing machines and hot presses, as well as a finishing and quality control unit"
+      },
+      "tetes": {
+        "title": "**99 EMBROIDERY HEADS**",
+        "description": "Divided between a workshop dedicated to sampling and one dedicated to large-series production"
+      },
+      "decoupe": {
+        "title": "**3 CUTTING MACHINES**",
+        "description": "2 laser cutters and 1 digital table with shape recognition"
+      }
+    },
+    "finishing": {
+      "p1": "Finishing is the **indispensable** final touch to our work for **impeccable** quality.",
+      "p2": "It is a craft in its own right, requiring a **precise** eye and great **attention to detail**.\nStitch by stitch, our workshop applies the final care to your products."
+    }
+  },
+  "galerie": {
+    "hero": { "title": "GALLERY" },
+    "selector": {
+      "label": "Embroidery categories",
+      "selectedHint": "Selected category"
+    },
+    "images": {
+      "placeholder": "{category} — pattern {number}",
+      "sample": "{category} — textile sample detail {number}"
+    },
+    "categories": {
+      "traditionnelle": "Traditional",
+      "3d": "3D",
+      "cornely": "Cornely",
+      "macrame": "Macramé",
+      "coiling": "Coiling",
+      "perles": "Beads",
+      "multi-techniques": "Multi-technique",
+      "sequins": "Sequins",
+      "tuffetage": "Tufting",
+      "smock": "Smock",
+      "matelasse": "Quilted",
+      "applications": "Appliqués",
+      "patchs": "Patches",
+      "all-over": "All-over",
+      "patchwork": "Patchwork",
+      "decoupe": "Cut-out",
+      "gros-fil": "Thick thread"
+    }
+  },
+  "common": {
+    "meta": {
+      "title": "Fil'ing Broderies — Luxury embroidery since 1997",
+      "description": "Fil'ing Broderies — French luxury embroidery manufacturer. Creation and production for the great luxury and high-end houses."
+    },
+    "skipToContent": "Skip to content",
+    "brand": { "name": "Fil'ing Broderies" },
+    "sectionLabels": {
+      "intro": "Introduction",
+      "services": "Services",
+      "expertise": "Expertise",
+      "timeline": "Timeline — key milestones",
+      "values": "Our values",
+      "gallery": "Gallery",
+      "facts": "Key figures",
+      "carousel": "Image carousel",
+      "finishing": "Finishing",
+      "categories": "Embroidery categories"
+    },
+    "gallery": {
+      "dialogLabel": "Image viewer",
+      "closeLabel": "Close the image viewer",
+      "openLabel": "Enlarge image"
+    },
+    "carousel": {
+      "regionLabel": "Scrollable image gallery",
+      "dialogLabel": "Image viewer",
+      "closeLabel": "Close the image viewer",
+      "openLabel": "Enlarge image"
+    },
+    "bigcarousel": {
+      "regionLabel": "Image carousel",
+      "prevLabel": "Previous image",
+      "nextLabel": "Next image",
+      "goToImage": "Go to image"
+    },
+    "menu": {
+      "accueil": "Home",
+      "creation": "Creation",
+      "production": "Production",
+      "galerie": "Gallery",
+      "triggerLabel": "Open the navigation menu",
+      "closeLabel": "Close the navigation menu",
+      "dialogLabel": "Navigation menu"
+    },
+    "language": {
+      "navLabel": "Language selector",
+      "navLabelWithCurrent": "Language selector, current language: {current}",
+      "label": { "fr": "FR", "en": "EN", "it": "IT" },
+      "switchTo": {
+        "fr": "Switch to French",
+        "en": "Switch to English",
+        "it": "Switch to Italian"
+      }
+    },
+    "footer": {
+      "contact": "CONTACT",
+      "trajet": "JOURNEY FROM",
+      "gare": "Lyon Part-Dieu TGV Station",
+      "aeroport": "Lyon Saint-Exupéry Airport and TGV Station",
+      "copyright": "2026 Fil'ing Broderies. © All rights reserved. Made by Nicolas and Emilie.",
+      "sitemapLabel": "Sitemap",
+      "aria": {
+        "mail": "Send an email to Fil'ing Broderies",
+        "adresse": "Locate Fil'ing Broderies on the map",
+        "instagram": "Fil'ing Broderies on Instagram (opens in a new tab)",
+        "linkedin": "Fil'ing Broderies on LinkedIn (opens in a new tab)",
+        "gare": "Lyon Part-Dieu TGV Station",
+        "aeroport": "Lyon Saint-Exupéry Airport and TGV Station"
+      }
+    }
+  }
+}

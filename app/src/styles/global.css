@@ -1,0 +1,462 @@
+/* ==========================================================================
+   Global stylesheet — Fil'ing Broderies
+   Imports Tailwind v4, design tokens, and self-hosted fonts (fontsource).
+   ========================================================================== */
+
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* ---- Self-hosted fonts (fontsource) ---- */
+/* Poppins (headings): 400, 500, 600, 700 */
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+
+/* Noto Sans (body): 400, 500 */
+@import '@fontsource/noto-sans/400.css';
+@import '@fontsource/noto-sans/500.css';
+
+/* ==========================================================================
+   Base reset
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-language-viewport-locked='true'],
+html[data-language-scroll-restoring='true'],
+body[data-language-viewport-locked='true'] {
+  scroll-behavior: auto !important;
+  overflow: hidden;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html[data-language-viewport-locked='true']::-webkit-scrollbar,
+body[data-language-viewport-locked='true']::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--color-charcoal);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -ms-overflow-style: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--color-charcoal);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+img {
+  border-style: none;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ==========================================================================
+   Focus visible — gold outline for accessibility
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   Content width helper
+   ========================================================================== */
+
+.content-max {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--content-padding);
+}
+
+/* ==========================================================================
+   Visually-hidden helper (screen-reader-only)
+   Standard pattern: visually hidden but available to assistive tech.
+   ========================================================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   Skip-to-content link (a11y)
+   Visually hidden until focused, then appears as a fixed top-left pill.
+   ========================================================================== */
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 200;
+  transform: translateY(-150%);
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-charcoal);
+  color: var(--color-gold);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: transform var(--duration-base) var(--ease-luxury);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Shared top chrome — language flags remain in the natural page flow while the
+   menu component fixes its own spool at the top-right.
+   ========================================================================== */
+
+.site-chrome {
+  position: absolute;
+  top: var(--content-padding);
+  left: var(--content-padding);
+  right: var(--content-padding);
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+.site-chrome > * {
+  pointer-events: auto;
+}
+
+/* ========================================================================== 
+   Language silk wipe transition
+   ========================================================================== */
+
+.language-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: hidden;
+  background: transparent;
+}
+
+.language-wipe__silk,
+.language-wipe__grain,
+.language-wipe__gleam,
+.language-wipe__thread {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-104%);
+  transform-origin: left center;
+  will-change: transform, opacity;
+}
+
+.language-wipe__silk {
+  background:
+    radial-gradient(circle at 22% 16%, color-mix(in srgb, var(--color-gold) 13%, transparent), transparent 30%),
+    radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--color-warm-white) 8%, transparent), transparent 34%),
+    linear-gradient(118deg, color-mix(in srgb, var(--color-charcoal) 94%, black), color-mix(in srgb, var(--color-charcoal) 80%, var(--color-gold)) 48%, color-mix(in srgb, var(--color-charcoal) 92%, black));
+  box-shadow: 0 0 7rem color-mix(in srgb, var(--color-gold) 16%, transparent);
+}
+
+.language-wipe__grain {
+  opacity: 0;
+  background:
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--color-warm-white) 5%, transparent) 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--color-gold) 6%, transparent) 0 1px, transparent 1px 14px);
+  mix-blend-mode: screen;
+}
+
+.language-wipe__gleam {
+  inset: -12% -35%;
+  opacity: 0;
+  background: linear-gradient(105deg, transparent 34%, color-mix(in srgb, var(--color-warm-white) 18%, transparent) 45%, color-mix(in srgb, var(--color-gold) 14%, transparent) 50%, transparent 62%);
+}
+
+.language-wipe__thread {
+  inset: 9vh auto 9vh 0;
+  width: min(28vw, 20rem);
+  opacity: 0;
+  background:
+    linear-gradient(90deg, transparent 0 16%, color-mix(in srgb, var(--color-gold) 72%, var(--color-warm-white)) 48%, transparent 82%),
+    repeating-linear-gradient(0deg, transparent 0 1.05rem, color-mix(in srgb, var(--color-gold) 34%, transparent) 1.05rem 1.12rem, transparent 1.12rem 2.15rem);
+  filter: blur(0.2px);
+}
+
+.language-wipe--active .language-wipe__silk {
+  animation: language-silk-enter 1.18s cubic-bezier(0.82, 0, 0.18, 1) both;
+}
+
+.language-wipe--active .language-wipe__grain {
+  animation: language-grain-enter 1.18s cubic-bezier(0.82, 0, 0.18, 1) both, language-silk-breathe 5.8s ease-in-out 1.18s infinite alternate;
+}
+
+.language-wipe--active .language-wipe__gleam {
+  animation: language-gleam-enter 1.18s cubic-bezier(0.82, 0, 0.18, 1) both, language-gleam-hold 6.5s ease-in-out 1.18s infinite;
+}
+
+.language-wipe--active .language-wipe__thread {
+  animation: language-thread-enter 1.18s cubic-bezier(0.82, 0, 0.18, 1) both, language-thread-hold 4.8s ease-in-out 1.18s infinite alternate;
+}
+
+.language-wipe--covered .language-wipe__silk,
+.language-wipe--covered .language-wipe__grain,
+.language-wipe--covered .language-wipe__gleam,
+.language-wipe--covered .language-wipe__thread {
+  transform: translateX(0%);
+}
+
+.language-wipe--covered .language-wipe__grain {
+  opacity: 0.42;
+}
+
+.language-wipe--covered .language-wipe__gleam {
+  opacity: 1;
+}
+
+.language-wipe--covered .language-wipe__thread {
+  opacity: 0.86;
+}
+
+.language-wipe--exit .language-wipe__silk {
+  animation: language-silk-exit 0.94s cubic-bezier(0.82, 0, 0.18, 1) both;
+}
+
+.language-wipe--exit .language-wipe__grain {
+  animation: language-layer-exit 0.94s cubic-bezier(0.82, 0, 0.18, 1) both;
+}
+
+.language-wipe--exit .language-wipe__gleam {
+  animation: language-layer-exit 0.94s cubic-bezier(0.82, 0, 0.18, 1) both;
+}
+
+.language-wipe--exit .language-wipe__thread {
+  animation: language-layer-exit 0.94s cubic-bezier(0.82, 0, 0.18, 1) both;
+}
+
+@keyframes language-silk-enter {
+  0% {
+    transform: translateX(-104%);
+  }
+  62% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+@keyframes language-grain-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-104%);
+  }
+  62%,
+  100% {
+    opacity: 0.42;
+    transform: translateX(0%);
+  }
+}
+
+@keyframes language-gleam-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-104%);
+  }
+  62%,
+  100% {
+    opacity: 1;
+    transform: translateX(0%);
+  }
+}
+
+@keyframes language-thread-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-86%);
+  }
+  42% {
+    opacity: 0.38;
+  }
+  100% {
+    opacity: 0.86;
+    transform: translateX(0%);
+  }
+}
+
+@keyframes language-silk-exit {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(104%);
+  }
+}
+
+@keyframes language-layer-exit {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(104%);
+  }
+}
+
+@keyframes language-silk-breathe {
+  0% {
+    opacity: 0.34;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes language-gleam-hold {
+  0%,
+  100% {
+    transform: translateX(0%);
+  }
+  48% {
+    transform: translateX(8%);
+  }
+}
+
+@keyframes language-thread-hold {
+  0% {
+    opacity: 0.68;
+  }
+  100% {
+    opacity: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .language-wipe {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   prefers-reduced-motion baseline
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   View Transitions — page transition choreography (US-24 / V2-02 / V2-03)
+   ==========================================================================
+   ClientRouter owns document preparation and swapping; `scripts/main.ts`
+   choreographs outgoing and incoming `<main>` with GSAP. Native snapshot
+   animation stays disabled to prevent a second CSS animation over GSAP.
+
+   The `locale` cookie persists automatically across swaps (cookies are
+   not touched by the transition). Scroll restoration is handled by Astro
+   (new navigations start at the top). Islands re-init via their own
+   `astro:page-load` listeners.
+
+   `prefers-reduced-motion`: the custom animations are disabled so the
+   swap is instant (the View Transitions API still snapshots, but with
+   no animation duration).
+   ========================================================================== */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}

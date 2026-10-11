@@ -1,0 +1,70 @@
+---
+import type { GalleryCard } from '../../data/galleryTypes';
+interface Props {
+  card: GalleryCard;
+}
+const { card } = Astro.props;
+---
+
+<button
+  type="button"
+  class="catalogue-card"
+  data-gallery-card
+  data-category={card.category}
+  data-type={card.type}
+  data-image={card.image}
+>
+  <img
+    src={card.photo.src}
+    srcset={card.photo.srcset}
+    sizes={card.photo.sizes}
+    width={card.photo.width}
+    height={card.photo.height}
+    alt={card.photo.alt}
+    loading="lazy"
+    decoding="async"
+    draggable="false"
+  />
+  <span class="catalogue-card__caption"
+    ><span>{card.categoryLabel} · {card.label}</span><span
+      >{Astro.locals.t('ui.gallery.imageCount').replace('{count}', String(card.imageCount))}</span
+    ></span
+  >
+</button>
+<style is:global>
+  .catalogue-card {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 0;
+    padding: 0 !important;
+    text-align: left;
+    cursor: pointer;
+    color: var(--color-charcoal);
+  }
+  .catalogue-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--color-warm-white);
+  }
+  .catalogue-card__caption {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 0.1rem 1.5rem;
+    font-size: 0.85rem;
+  }
+  .catalogue-card__caption > :last-child {
+    opacity: 0.65;
+  }
+  .catalogue-card:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 4px;
+  }
+  .catalogue-rail .catalogue-card img {
+    height: clamp(260px, 50vh, 480px);
+    object-fit: cover;
+  }
+</style>

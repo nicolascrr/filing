@@ -30,31 +30,41 @@
   .home-scroll-stroke-route {
     --home-thread-top-offset: calc(
       var(--space-section) + clamp(1.625rem, 3vw, 3rem) + clamp(1rem, 2vw, 2rem) +
-        clamp(2rem, 4vw, 4rem)
+        clamp(2rem, 4vw, 4rem) + 30px
     );
 
     position: absolute;
+    display: none;
     z-index: var(--home-thread-decorative-layer, 0);
-    inset: var(--home-thread-top-offset) 0 0;
+    inset: 0;
     overflow: visible;
     pointer-events: none;
+  }
+
+  .home-scroll-stroke-route[data-thread-active] {
+    display: block;
   }
 
   .home-scroll-stroke {
     position: absolute;
     /* Scale and shift the source geometry so its first and last path points
        align with the route wrapper's bounds. */
-    top: -17.326275%;
-    left: 82%;
+    top: 0;
+    left: 0;
     display: block;
-    width: auto;
-    height: 101.944865%;
+    width: 100%;
+    height: 100%;
     max-width: none;
-    transform: translateX(-68.591941%);
+    transform: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-scroll-stroke-route {
+    .home-scroll-stroke-route[data-thread-active] {
+      display: none;
+    }
+  }
+  @media (max-width: 767px) {
+    .home-scroll-stroke-route[data-thread-active] {
       display: none;
     }
   }
@@ -79,61 +89,132 @@
       '[data-home-thread-terminal-content]',
     );
     if (!region || !end || !path || !svg || !route || !terminalContent) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const media = gsap.matchMedia();
+    activeCleanups.push(() => media.revert());
+    media.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
+      let active = true;
 
-    const routeSource = path.getAttribute('d');
-    if (!routeSource) return;
+      const routeSource = path.getAttribute('d');
+      if (!routeSource) return;
+      route.dataset.threadActive = 'true';
 
-    const routePrefix = routeSource.split('C1201.28 2077.83')[0];
-    if (!routePrefix) return;
-
-    const updateTerminalRoute = (): void => {
-      const svgBounds = svg.getBoundingClientRect();
-      const contentBounds = terminalContent.getBoundingClientRect();
-      if (svgBounds.width === 0) return;
-
-      // Keep the terminal strand centered in the available whitespace to the
-      // left of the ending copy, regardless of the tall SVG's responsive scale.
-      const strokeWidth = (1 * svgBounds.width) / 1278;
-      const targetViewportX = Math.max(strokeWidth / 2 + 8, contentBounds.left / 2);
-      const terminalX = ((targetViewportX - svgBounds.left) * 1278) / svgBounds.width;
-
-      const terminalEntryX = terminalX + 24;
-
-      // Follow the incoming loop's tangent directly to the terminal curls.
-      path.setAttribute(
-        'd',
-        `${routePrefix}C1201.28 2077.83 ${terminalX + 977.94} 2114.9275 ${terminalX + 700} 2160C${terminalX + 422.06} 2205.0725 ${terminalX + 89.52} 2258.12 ${terminalEntryX} 2306C${terminalX - 41.52} 2353.88 ${terminalX - 54} 2420 ${terminalX + 4} 2412C${terminalX + 56} 2404 ${terminalX + 50} 2347 ${terminalX + 7} 2359C${terminalX - 31} 2370 ${terminalX - 38} 2444 ${terminalX + 9} 2458C${terminalX + 58} 2473 ${terminalX + 53} 2539 ${terminalX + 3} 2534C${terminalX - 45} 2529 ${terminalX - 41} 2479 ${terminalX + 2} 2487C${terminalX + 43} 2495 ${terminalX + 31} 2590 ${terminalX} 2668.89`,
-      );
-    };
-
-    updateTerminalRoute();
-
-    const context = gsap.context(() => {
-      const draw = { pathLength: 0.5 };
-      const render = (): void => {
-        path.style.strokeDasharray = `${draw.pathLength} 1`;
-        path.style.strokeDashoffset = String(1 - draw.pathLength);
+      const updateTerminalRoute = (): void => {
+        const bounds = region.getBoundingClientRect();
+        const intro = region
+          .querySelector<HTMLElement>('.section-intro__inner')
+          ?.getBoundingClientRect();
+        const cards = region
+          .querySelector<HTMLElement>('.section-services__grid')
+          ?.getBoundingClientRect();
+        const copy = terminalContent.getBoundingClientRect();
+        if (!intro || !cards || !bounds.width) return;
+        svg.setAttribute('viewBox', `0 0 ${bounds.width} ${bounds.height}`);
+        // Remap the original continuous Skiper strand (including its curls),
+        // rather than adding detached ornaments. All crossings stay in whitespace.
+        const offset = parseFloat(
+          getComputedStyle(region.querySelector('.section-intro')!).paddingTop,
+        );
+        const origin =
+          offset +
+          Math.min(48, Math.max(26, bounds.width * 0.03)) +
+          Math.min(32, Math.max(16, bounds.width * 0.02)) +
+          Math.min(64, Math.max(32, bounds.width * 0.04)) +
+          30;
+        const beforeCards = intro.bottom - bounds.top + 28;
+        const afterCards = cards.bottom - bounds.top + 32;
+        const aboveCopy = copy.top - bounds.top - 36;
+        const leftGutter = Math.max(10, (cards.left - bounds.left) / 2);
+        const rightStart = intro.right - bounds.left + 18;
+        const rightWidth = Math.max(8, bounds.width - rightStart - 12);
+        let coordinate = 0;
+        let sourceX = 0;
+        path.setAttribute(
+          'd',
+          routeSource.replace(/-?\d*\.?\d+/g, (value) => {
+            const n = Number(value);
+            if (coordinate++ % 2 === 0) {
+              sourceX = n;
+              return '';
+            }
+            let x: number;
+            let y: number;
+            if (n <= 560) {
+              x = rightStart + ((sourceX - 490) / 790) * rightWidth;
+              y = origin + (n - 394.131) * 0.3;
+            } else if (n <= 1141) {
+              // Stay in the right gutter until the whole introduction is cleared.
+              // Cubic controls in this descent must not shortcut through long locales.
+              x = rightStart + ((sourceX - 490) / 790) * rightWidth;
+              y =
+                origin +
+                (560 - 394.131) * 0.3 +
+                ((n - 560) / 581) * (beforeCards - origin - (560 - 394.131) * 0.3);
+            } else if (n <= 1300) {
+              const progress = (n - 1141) / 159;
+              x = leftGutter + (sourceX / 1278) * (bounds.width - leftGutter - 12);
+              y = beforeCards + progress * Math.max(12, cards.top - bounds.top - 32 - beforeCards);
+            } else if (n <= 2000) {
+              x = leftGutter + (sourceX / 1278 - 0.5) * Math.max(4, leftGutter - 8);
+              // The transition's cubic controls must also stay above the cards;
+              // moving only its endpoint lets the curve clip the first photograph.
+              y = cards.top - bounds.top - 32 + (Math.max(0, n - 1460) / 540) * (cards.height + 64);
+            } else {
+              x = leftGutter + (sourceX / 1278) * (bounds.width - leftGutter - 12);
+              if (n >= 2200) x = leftGutter + 16 + (sourceX + 54) * 0.45;
+              const gap = Math.max(12, aboveCopy - afterCards);
+              y =
+                n <= 2306
+                  ? afterCards + ((n - 2000) / 306) * gap * 0.35
+                  : afterCards + gap * (0.35 + ((n - 2306) / 363) * 0.65);
+            }
+            return `${x.toFixed(2)} ${y.toFixed(2)}`;
+          }),
+        );
       };
 
-      render();
-      gsap.to(draw, {
-        pathLength: 1,
-        ease: 'none',
-        onUpdate: render,
-        scrollTrigger: {
-          trigger: route,
-          start: 'top 65%',
-          endTrigger: end,
-          end: 'top bottom',
-          scrub: 4,
-          invalidateOnRefresh: true,
-          onRefresh: updateTerminalRoute,
-        },
-      });
-    }, region);
+      updateTerminalRoute();
 
-    activeCleanups.push(() => context.revert());
+      const context = gsap.context(() => {
+        const draw = { pathLength: 0.5 };
+        const render = (): void => {
+          path.style.strokeDasharray = `${draw.pathLength} 1`;
+          path.style.strokeDashoffset = String(1 - draw.pathLength);
+        };
+
+        render();
+        gsap.to(draw, {
+          pathLength: 1,
+          ease: 'none',
+          onUpdate: render,
+          scrollTrigger: {
+            trigger: route,
+            start: 'top 80%',
+            endTrigger: end,
+            end: 'top bottom',
+            scrub: 4,
+            invalidateOnRefresh: true,
+            onRefresh: updateTerminalRoute,
+          },
+        });
+      }, region);
+
+      const observer = new ResizeObserver(() => {
+        updateTerminalRoute();
+      });
+      observer.observe(region);
+      void document.fonts.ready.then(() => {
+        if (active && region.isConnected) updateTerminalRoute();
+      });
+      return () => {
+        active = false;
+        observer.disconnect();
+        context.revert();
+        path.setAttribute('d', routeSource);
+        path.style.removeProperty('stroke-dasharray');
+        path.style.removeProperty('stroke-dashoffset');
+        delete route.dataset.threadActive;
+      };
+    });
   }
 
   function cleanupHomeScrollStroke(): void {

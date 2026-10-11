@@ -47,12 +47,102 @@ const regionLabel = t('accueil.timeline.regionLabel');
             </li>
           ))}
         </ol>
+        <div class="timeline__controls">
+          <button
+            type="button"
+            class="timeline__arrow"
+            data-timeline-previous
+            aria-label={t('ui.timeline.previous')}
+          >
+            ←
+          </button>
+          <input
+            class="timeline__range"
+            data-timeline-range
+            type="range"
+            min="0"
+            max={milestones.length - 1}
+            step="any"
+            value="0"
+            aria-label={t('ui.timeline.range')}
+            aria-valuetext={String(milestones[0]?.year)}
+          />
+          <output class="timeline__position" data-timeline-position aria-hidden="true">
+            {milestones[0]?.year}
+          </output>
+          <button
+            type="button"
+            class="timeline__arrow"
+            data-timeline-next
+            aria-label={t('ui.timeline.next')}
+          >
+            →
+          </button>
+        </div>
       </div>
     </section>
   )
 }
 
 <style>
+  .timeline__controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: min(100%, 36rem);
+    margin: 1rem auto 0;
+    padding-inline: var(--content-padding);
+  }
+  .timeline__arrow {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.5rem;
+  }
+  .timeline__arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .timeline__position {
+    min-width: 4ch;
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+  }
+  .timeline__range {
+    appearance: none;
+    min-width: 0;
+    width: 100%;
+    height: 44px;
+    background: transparent;
+    cursor: pointer;
+    touch-action: none;
+  }
+  .timeline__range::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--color-charcoal);
+  }
+  .timeline__range::-moz-range-track {
+    height: 2px;
+    background: var(--color-charcoal);
+  }
+  .timeline__range::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -8px;
+    border: 3px solid var(--color-warm-white);
+    border-radius: 50%;
+    background: var(--color-brand-orange);
+    box-shadow: 0 0 0 1px var(--color-charcoal);
+  }
+  .timeline__range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 3px solid var(--color-warm-white);
+    border-radius: 50%;
+    background: var(--color-brand-orange);
+    box-shadow: 0 0 0 1px var(--color-charcoal);
+  }
   .timeline {
     /* Change collapsed/expanded dimensions here. */
     --timeline-card-expanded: 420px;
@@ -280,13 +370,66 @@ const regionLabel = t('accueil.timeline.regionLabel');
     }
   }
 
+  /* SSR/no-JS fallback: the accordion is only collapsed by its controller. */
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+    .timeline:not([data-timeline-enhanced='true']) .timeline__list {
+      flex-wrap: wrap;
+      overflow: visible;
+    }
+    .timeline:not([data-timeline-enhanced='true']) .timeline__item {
+      flex: 1 1 var(--timeline-card-mobile);
+      transform: none;
+    }
+    .timeline:not([data-timeline-enhanced='true']) .timeline__card {
+      height: auto;
+      min-height: 22rem;
+      opacity: 1;
+    }
+    .timeline:not([data-timeline-enhanced='true']) .timeline__content {
+      position: relative;
+      inset: auto;
+      padding: 1.5rem;
+    }
+    .timeline:not([data-timeline-enhanced='true']) .timeline__year {
+      font-size: var(--text-3xl);
+    }
+    .timeline:not([data-timeline-enhanced='true']) .timeline__description {
+      position: static;
+      visibility: visible;
+      opacity: 1;
+      transform: none;
+      max-width: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .timeline__stage {
+      min-height: 0;
+    }
     .timeline__list {
       scroll-snap-type: none;
+      flex-wrap: wrap;
+      overflow: visible;
+      padding-inline: var(--content-padding);
     }
 
     .timeline__item {
-      flex-basis: var(--timeline-card-mobile);
+      flex: 1 1 var(--timeline-card-mobile);
+      transform: none !important;
+    }
+    .timeline__card {
+      height: auto;
+      min-height: 22rem;
+      opacity: 1;
+      overflow: visible;
+    }
+    .timeline__content {
+      position: relative;
+      inset: auto;
+      padding: 1.5rem;
+    }
+    .timeline__year {
+      font-size: var(--text-3xl);
     }
 
     .timeline__image {
@@ -295,6 +438,10 @@ const regionLabel = t('accueil.timeline.regionLabel');
     }
 
     .timeline__description {
+      position: static;
+      visibility: visible;
+      max-width: none;
+      overflow: visible;
       opacity: 1;
       transform: none;
     }
@@ -305,10 +452,12 @@ const regionLabel = t('accueil.timeline.regionLabel');
   import { gsap, ScrollTrigger } from '../../scripts/gsap';
 
   type Cleanup = () => void;
-  type ActiveSource = 'click' | 'focus' | 'touch' | 'scroll' | 'initial';
+  type ActiveSource = 'click' | 'focus' | 'touch' | 'scroll' | 'range' | 'initial';
   interface ActiveOptions {
     animate?: boolean;
     force?: boolean;
+    rangeValue?: number;
+    writeRangeValue?: boolean;
     source: ActiveSource;
   }
 
@@ -336,10 +485,12 @@ const regionLabel = t('accueil.timeline.regionLabel');
     const scrims = Array.from(root.querySelectorAll<HTMLElement>('.timeline__scrim'));
     const contents = Array.from(root.querySelectorAll<HTMLElement>('.timeline__content'));
     const years = Array.from(root.querySelectorAll<HTMLElement>('.timeline__year'));
-    const yearValues = Array.from(
-      root.querySelectorAll<HTMLElement>('.timeline__year-value'),
-    );
+    const yearValues = Array.from(root.querySelectorAll<HTMLElement>('.timeline__year-value'));
     const descriptions = Array.from(root.querySelectorAll<HTMLElement>('.timeline__description'));
+    const range = root.querySelector<HTMLInputElement>('[data-timeline-range]');
+    const previous = root.querySelector<HTMLButtonElement>('[data-timeline-previous]');
+    const next = root.querySelector<HTMLButtonElement>('[data-timeline-next]');
+    const position = root.querySelector<HTMLOutputElement>('[data-timeline-position]');
 
     if (!stage || !list || cards.length === 0 || items.length !== cards.length)
       return () => undefined;
@@ -347,8 +498,17 @@ const regionLabel = t('accueil.timeline.regionLabel');
     let activeIndex = 0;
     let desktopAccordion = false;
     let activeAnimation: gsap.core.Timeline | null = null;
+    let listAnimation: gsap.core.Tween | null = null;
+    let inputOwner: 'range' | 'navigation' | null = null;
+    let rangePointerId: number | null = null;
+    let rangeNeedsRender = false;
+    let lastRangeScroll: number | null = null;
+    let restoreRangeScrollBehavior: Cleanup | null = null;
+    let syncingScroll = false;
+    const originalScrollSnap = list.style.scrollSnapType;
     let scrollFrame = 0;
     let refreshFrame = 0;
+    let refreshQueued = false;
     let desktopTrigger: ReturnType<typeof ScrollTrigger.create> | null = null;
     let media: gsap.MatchMedia | null = null;
     let resizeObserver: ResizeObserver | null = null;
@@ -372,7 +532,16 @@ const regionLabel = t('accueil.timeline.regionLabel');
        * that prevents stale transforms and keeps every input mode deterministic.
        */
       const setActiveMilestone = (nextIndex: number, options: ActiveOptions): void => {
+        if (inputOwner === 'range' && options.source !== 'range') return;
         const index = Math.min(Math.max(Math.round(nextIndex), 0), cards.length - 1);
+        if (range) {
+          if (inputOwner !== 'range' && options.writeRangeValue !== false)
+            range.value = String(options.rangeValue ?? index);
+          range.setAttribute('aria-valuetext', years[index]?.textContent?.trim() ?? '');
+        }
+        if (position) position.value = years[index]?.textContent?.trim() ?? '';
+        if (previous) previous.disabled = index === 0;
+        if (next) next.disabled = index === cards.length - 1;
         if (!options.force && index === activeIndex && cards[index]?.dataset.active === 'true')
           return;
 
@@ -479,34 +648,191 @@ const regionLabel = t('accueil.timeline.regionLabel');
           .to(scrims, { opacity: (itemIndex: number) => state.scrimOpacity[itemIndex] }, 0);
       };
 
-      const activateNearestCard = (source: 'touch' | 'scroll'): void => {
-        const center = list.getBoundingClientRect().left + list.clientWidth / 2;
-        let nearestIndex = 0;
-        let nearestDistance = Number.POSITIVE_INFINITY;
-        cards.forEach((card, index) => {
-          const bounds = card.getBoundingClientRect();
-          const distance = Math.abs(bounds.left + bounds.width / 2 - center);
-          if (distance < nearestDistance) {
-            nearestDistance = distance;
-            nearestIndex = index;
+      const clampValue = (value: number): number =>
+        Math.min(Math.max(value, 0), cards.length - 1);
+      const listDestination = (value: number): number => {
+        const lower = Math.floor(value);
+        const upper = Math.ceil(value);
+        const center = (index: number): number => {
+          const item = items[index];
+          const left = item.offsetLeft - list.offsetLeft - (list.clientWidth - item.clientWidth) / 2;
+          return Math.min(Math.max(left, 0), Math.max(0, list.scrollWidth - list.clientWidth));
+        };
+        const left = center(lower) + (center(upper) - center(lower)) * (value - lower);
+        return Math.min(Math.max(left, 0), Math.max(0, list.scrollWidth - list.clientWidth));
+      };
+      const stopListAnimation = (): void => {
+        onRangeEnd();
+        listAnimation?.kill();
+        listAnimation = null;
+        window.cancelAnimationFrame(scrollFrame);
+        inputOwner = null;
+        lastRangeScroll = null;
+        list.style.scrollSnapType = originalScrollSnap;
+      };
+      const syncPhysicalScroll = (value: number): void => {
+        syncingScroll = true;
+        try {
+          if (desktopTrigger && cards.length > 1) {
+            const target = desktopTrigger.start +
+              ((desktopTrigger.end - desktopTrigger.start) * value) / (cards.length - 1);
+            window.scrollTo({ top: target, behavior: 'instant' });
+            if (inputOwner === 'range') lastRangeScroll = window.scrollY;
+            ScrollTrigger.update();
+          } else if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            list.scrollTo({ left: listDestination(value), behavior: 'instant' });
+            if (inputOwner === 'range') lastRangeScroll = list.scrollLeft;
           }
+        } finally {
+          syncingScroll = false;
+        }
+      };
+      const navigateTo = (nextIndex: number, source: ActiveSource = 'click'): void => {
+        if (inputOwner === 'range') return;
+        const index = Math.round(clampValue(nextIndex));
+        stopListAnimation();
+        inputOwner = 'navigation';
+        setActiveMilestone(index, { source, animate: true });
+        if (desktopTrigger || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          // The same slide transition as wheel scroll; its physical destination
+          // is written under a guard so ScrollTrigger cannot replace the input.
+          syncPhysicalScroll(index);
+          inputOwner = null;
+        } else {
+          list.style.scrollSnapType = 'none';
+          listAnimation = gsap.to(list, {
+            scrollLeft: listDestination(index),
+            duration: getAnimationDuration(),
+            ease: getAnimationEase(),
+            overwrite: 'auto',
+            onComplete: stopListAnimation,
+          });
+        }
+      };
+      const beginRange = (): void => {
+        if (inputOwner === 'range') return;
+        stopListAnimation();
+        activeAnimation?.kill();
+        activeAnimation = null;
+        inputOwner = 'range';
+        rangeNeedsRender = true;
+        list.style.scrollSnapType = 'none';
+        // Leave the thumb and layout untouched until the browser emits input.
+      };
+      const disableRangeSmoothScroll = (): void => {
+        if (restoreRangeScrollBehavior) return;
+        const styles = [document.documentElement.style, list.style];
+        const originals = styles.map((style) => ({
+          value: style.getPropertyValue('scroll-behavior'),
+          priority: style.getPropertyPriority('scroll-behavior'),
+        }));
+        styles.forEach((style) => style.setProperty('scroll-behavior', 'auto', 'important'));
+        restoreRangeScrollBehavior = () => {
+          styles.forEach((style, index) => {
+            const original = originals[index];
+            if (original.value) style.setProperty('scroll-behavior', original.value, original.priority);
+            else style.removeProperty('scroll-behavior');
+          });
+        };
+      };
+      const onRange = (): void => {
+        if (!range) return;
+        const value = clampValue(Number(range.value));
+        const dragging = inputOwner === 'range';
+        if (!dragging) beginRange();
+        disableRangeSmoothScroll();
+        // Range owns both the continuous thumb and physical scroll. Layout is
+        // immediate during drag; no old tween may complete after a reversal.
+        setActiveMilestone(value, {
+          source: 'range', animate: false, force: rangeNeedsRender, writeRangeValue: false,
         });
-        setActiveMilestone(nearestIndex, { source, animate: true });
+        rangeNeedsRender = false;
+        syncPhysicalScroll(value);
+        if (!dragging) onRangeEnd();
+      };
+      const onRangeEnd = (event?: Event): void => {
+        if (inputOwner !== 'range') return;
+        if (event instanceof PointerEvent && event.pointerId !== rangePointerId) return;
+        rangePointerId = null;
+        inputOwner = null;
+        rangeNeedsRender = false;
+        restoreRangeScrollBehavior?.();
+        restoreRangeScrollBehavior = null;
+        // Restoring mandatory snap here moves the released position. Native
+        // list pointer/wheel interaction, navigation, or cleanup restores it.
+        if (desktopAccordion || window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+          list.style.scrollSnapType = originalScrollSnap;
+        if (refreshQueued) scheduleRefresh();
+      };
+      const onRangeStart = (event: PointerEvent): void => {
+        if (!range || !event.isPrimary || event.button !== 0 || rangePointerId !== null) return;
+        beginRange();
+        rangePointerId = event.pointerId;
+      };
+      const onWindowContextLoss = (): void => {
+        if (document.hidden) onRangeEnd();
+      };
+      const onListInteraction = (): void => {
+        if (inputOwner !== 'range') stopListAnimation();
+      };
+      const onRangeKey = (event: KeyboardEvent): void => {
+        if (!range) return;
+        let value = Number(range.value);
+        switch (event.key) {
+          case 'ArrowLeft': case 'ArrowDown': case 'PageDown': value -= 1; break;
+          case 'ArrowRight': case 'ArrowUp': case 'PageUp': value += 1; break;
+          case 'Home': value = 0; break;
+          case 'End': value = cards.length - 1; break;
+          default: return;
+        }
+        event.preventDefault();
+        navigateTo(value, 'range');
+      };
+      const onPrevious = (): void => navigateTo(activeIndex - 1);
+      const onNext = (): void => navigateTo(activeIndex + 1);
+
+      const activateNearestCard = (source: 'touch' | 'scroll'): void => {
+        if (inputOwner || syncingScroll) return;
+        let value = cards.length - 1;
+        if (lastRangeScroll === list.scrollLeft && range) {
+          value = Number(range.value);
+        } else {
+          lastRangeScroll = null;
+          for (let index = 0; index < cards.length - 1; index += 1) {
+            const start = listDestination(index);
+            const end = listDestination(index + 1);
+            if (list.scrollLeft <= end) {
+              value = index + (end > start ? (list.scrollLeft - start) / (end - start) : 0);
+              break;
+            }
+          }
+        }
+        value = clampValue(value);
+        setActiveMilestone(value, { source, animate: true, rangeValue: value });
       };
 
       const onFocus = (event: FocusEvent): void => {
         const card = event.currentTarget as HTMLElement;
-        setActiveMilestone(Number(card.dataset.index), { source: 'focus' });
+        navigateTo(Number(card.dataset.index), 'focus');
       };
       const onTouchEnd = (): void => activateNearestCard('touch');
       const onNativeScroll = (): void => {
+        if (desktopAccordion || inputOwner || syncingScroll) return;
         window.cancelAnimationFrame(scrollFrame);
         scrollFrame = window.requestAnimationFrame(() => activateNearestCard('scroll'));
       };
       const scheduleRefresh = (): void => {
         if (disposed) return;
+        refreshQueued = true;
         window.cancelAnimationFrame(refreshFrame);
-        refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+        refreshFrame = 0;
+        if (inputOwner === 'range') return;
+        refreshFrame = window.requestAnimationFrame(() => {
+          refreshFrame = 0;
+          if (disposed || inputOwner === 'range') return;
+          refreshQueued = false;
+          ScrollTrigger.refresh();
+        });
       };
 
       cards.forEach((card) => {
@@ -514,14 +840,30 @@ const regionLabel = t('accueil.timeline.regionLabel');
       });
       list.addEventListener('scroll', onNativeScroll, { passive: true });
       list.addEventListener('pointerup', onTouchEnd, { passive: true });
+      list.addEventListener('pointerdown', onListInteraction, { passive: true });
+      list.addEventListener('wheel', onListInteraction, { passive: true });
+      range?.addEventListener('pointerdown', onRangeStart);
+      range?.addEventListener('keydown', onRangeKey);
+      window.addEventListener('pointerup', onRangeEnd, true);
+      window.addEventListener('pointercancel', onRangeEnd, true);
+      window.addEventListener('blur', onRangeEnd);
+      document.addEventListener('visibilitychange', onWindowContextLoss);
+      range?.addEventListener('input', onRange);
+      previous?.addEventListener('click', onPrevious);
+      next?.addEventListener('click', onNext);
+      setActiveMilestone(0, { source: 'initial', force: true, animate: false });
 
       media = gsap.matchMedia();
       media.add(DESKTOP_MEDIA_QUERY, () => {
+        stopListAnimation();
         desktopAccordion = true;
+        root.dataset.timelineEnhanced = 'true';
         setActiveMilestone(activeIndex, { source: 'initial', animate: false, force: true });
         if (cards.length < 2)
           return () => {
+            stopListAnimation();
             desktopAccordion = false;
+            delete root.dataset.timelineEnhanced;
           };
 
         desktopTrigger = ScrollTrigger.create({
@@ -531,36 +873,50 @@ const regionLabel = t('accueil.timeline.regionLabel');
           pin: true,
           pinSpacing: true,
           anticipatePin: 1,
-          scrub: 0.72,
+          scrub: true,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
-            const index = Math.round(self.progress * (cards.length - 1));
-            setActiveMilestone(index, { source: 'scroll', animate: true });
+            if (inputOwner || syncingScroll) return;
+            const keepRangeValue = lastRangeScroll === self.scroll();
+            const value = keepRangeValue && range
+              ? Number(range.value) : self.progress * (cards.length - 1);
+            if (!keepRangeValue) lastRangeScroll = null;
+            setActiveMilestone(value, {
+              source: 'scroll',
+              animate: true,
+              rangeValue: value,
+            });
           },
         });
         const onDesktopClick = (event: MouseEvent): void => {
-          if (!desktopTrigger) return;
+          if (!desktopTrigger || inputOwner === 'range') return;
           const card = event.currentTarget as HTMLElement;
           const index = Number(card.dataset.index);
           // A click can occur while image/font layout has just settled. Refresh
           // before reading start/end so the physical destination is current.
           ScrollTrigger.refresh();
-          const normalizedProgress = index / (cards.length - 1);
-          const target =
-            desktopTrigger.start +
-            (desktopTrigger.end - desktopTrigger.start) * normalizedProgress;
-
-          setActiveMilestone(index, { source: 'click', animate: true });
-          desktopTrigger.scroll(target);
+          navigateTo(index);
         };
         cards.forEach((card) => card.addEventListener('click', onDesktopClick));
         return () => {
+          stopListAnimation();
+          activeAnimation?.kill();
           cards.forEach((card) => card.removeEventListener('click', onDesktopClick));
           desktopTrigger?.kill();
           desktopTrigger = null;
           desktopAccordion = false;
+          delete root.dataset.timelineEnhanced;
           gsap.set(
-            [...items, ...cards, ...images, ...scrims, ...contents, ...years, ...yearValues, ...descriptions],
+            [
+              ...items,
+              ...cards,
+              ...images,
+              ...scrims,
+              ...contents,
+              ...years,
+              ...yearValues,
+              ...descriptions,
+            ],
             { clearProps: 'all' },
           );
         };
@@ -586,6 +942,17 @@ const regionLabel = t('accueil.timeline.regionLabel');
         });
         list.removeEventListener('scroll', onNativeScroll);
         list.removeEventListener('pointerup', onTouchEnd);
+        list.removeEventListener('pointerdown', onListInteraction);
+        list.removeEventListener('wheel', onListInteraction);
+        range?.removeEventListener('pointerdown', onRangeStart);
+        range?.removeEventListener('keydown', onRangeKey);
+        window.removeEventListener('pointerup', onRangeEnd, true);
+        window.removeEventListener('pointercancel', onRangeEnd, true);
+        window.removeEventListener('blur', onRangeEnd);
+        document.removeEventListener('visibilitychange', onWindowContextLoss);
+        range?.removeEventListener('input', onRange);
+        previous?.removeEventListener('click', onPrevious);
+        next?.removeEventListener('click', onNext);
         resizeObserver?.disconnect();
         incompleteImageLoadListeners.forEach(({ image, listener }) => {
           image.removeEventListener('load', listener);
@@ -593,6 +960,7 @@ const regionLabel = t('accueil.timeline.regionLabel');
         window.cancelAnimationFrame(scrollFrame);
         window.cancelAnimationFrame(refreshFrame);
         activeAnimation?.kill();
+        stopListAnimation();
         media?.revert();
       };
     }, root);

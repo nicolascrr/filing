@@ -21,11 +21,20 @@ export interface Props {
   image: ImageMetadata;
   /** Link target. */
   href: string;
+  objectPosition?: string;
+  titleSize?: string;
   /** Optional layout override class. */
   class?: string;
 }
 
-const { title, image, href, class: className } = Astro.props;
+const {
+  title,
+  image,
+  href,
+  objectPosition = 'center',
+  titleSize = 'var(--text-lg)',
+  class: className,
+} = Astro.props;
 ---
 
 <a
@@ -46,13 +55,14 @@ const { title, image, href, class: className } = Astro.props;
       sizes="(max-width: 768px) 100vw, 50vw"
       class="image-card__img h-full w-full object-cover"
       loading="lazy"
+      style={`object-position: ${objectPosition};`}
     />
     <!-- Gradient scrim for title readability -->
     <div class="image-card__scrim pointer-events-none absolute inset-0" aria-hidden="true"></div>
     <figcaption class="image-card__caption absolute bottom-0 left-0 p-4 sm:p-5 md:p-6 text-white">
       <span
         class="block font-[var(--font-heading)] font-medium tracking-wide"
-        style="font-size: var(--text-lg); text-wrap: balance;"
+        style={`font-size: ${titleSize}; text-wrap: balance;`}
       >
         {title}
       </span>

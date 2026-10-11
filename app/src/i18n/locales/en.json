@@ -1,4 +1,37 @@
 {
+  "ui": {
+    "gallery": {
+      "overviewHeading": "An overview of our embroidery",
+      "allCategories": "All categories",
+      "reset": "Reset filters",
+      "category": "Category",
+      "type": "Type",
+      "sample": "Sample",
+      "sampleCount": "Samples: {count}",
+      "imageCount": "Images: {count}",
+      "viewCategory": "View the {category} category",
+      "emptyCoiling": "No Coiling samples are currently available."
+    },
+    "photo": {
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "reset": "Reset zoom",
+      "previousSample": "Previous sample",
+      "nextSample": "Next sample",
+      "loading": "Loading image…",
+      "error": "Unable to load the image.",
+      "retry": "Try again"
+    },
+    "timeline": {
+      "range": "Browse the milestones of our history",
+      "previous": "Previous milestone",
+      "next": "Next milestone"
+    },
+    "language": {
+      "pending": "Changing language…",
+      "switchProgress": "{source} → {destination} · Changing language…"
+    }
+  },
   "accueil": {
     "hero": {
       "tagline": "LUXURY EMBROIDERY SINCE 1997"

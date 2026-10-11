@@ -1,0 +1,38 @@
+---
+import CatalogueCard from './CatalogueCard.astro';
+import type { GalleryCard } from '../../data/galleryTypes';
+interface Props {
+  cards: GalleryCard[];
+  hidden?: boolean;
+}
+const { cards, hidden = false } = Astro.props;
+---
+
+<div class="catalogue-masonry" data-gallery-masonry hidden={hidden}>
+  {cards.map((card) => <CatalogueCard card={card} />)}
+</div>
+<style is:global>
+  .catalogue-masonry {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+  .catalogue-masonry[data-layout] {
+    grid-auto-rows: 10px;
+  }
+  .catalogue-masonry[hidden] {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .catalogue-masonry {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 2rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .catalogue-masonry {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>

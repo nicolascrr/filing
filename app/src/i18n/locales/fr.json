@@ -1,4 +1,37 @@
 {
+  "ui": {
+    "gallery": {
+      "overviewHeading": "Aperçu de nos broderies",
+      "allCategories": "Toutes les catégories",
+      "reset": "Réinitialiser les filtres",
+      "category": "Catégorie",
+      "type": "Type",
+      "sample": "Échantillon",
+      "sampleCount": "Échantillons : {count}",
+      "imageCount": "Images : {count}",
+      "viewCategory": "Voir la catégorie {category}",
+      "emptyCoiling": "Aucun échantillon Coiling disponible pour le moment."
+    },
+    "photo": {
+      "zoomIn": "Zoom avant",
+      "zoomOut": "Zoom arrière",
+      "reset": "Réinitialiser le zoom",
+      "previousSample": "Échantillon précédent",
+      "nextSample": "Échantillon suivant",
+      "loading": "Chargement de l’image…",
+      "error": "Impossible de charger l’image.",
+      "retry": "Réessayer"
+    },
+    "timeline": {
+      "range": "Parcourir les étapes de notre histoire",
+      "previous": "Étape précédente",
+      "next": "Étape suivante"
+    },
+    "language": {
+      "pending": "Changement de langue en cours…",
+      "switchProgress": "{source} → {destination} · Changement de langue…"
+    }
+  },
   "accueil": {
     "hero": {
       "tagline": "BRODERIE DE LUXE DEPUIS 1997"

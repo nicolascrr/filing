@@ -8,7 +8,7 @@
  */
 
 const STORAGE_KEY = 'filing:language-switch';
-const TTL_MS = 5000;
+const TTL_MS = 60000;
 const SCROLL_RESTORE_DATASET = 'languageScrollRestoring';
 
 export interface LanguageSwitchState {
@@ -16,6 +16,8 @@ export interface LanguageSwitchState {
   scrollX: number;
   scrollY: number;
   timestamp: number;
+  /** Restore the closed menu trigger after a locale-triggered full reload. */
+  focusInMenu?: boolean;
 }
 
 export interface ConsumedLanguageSwitchState extends LanguageSwitchState {
@@ -62,7 +64,11 @@ function isFresh(state: LanguageSwitchState): boolean {
   return Date.now() - state.timestamp <= TTL_MS;
 }
 
-function applyRootLockState(scrollX: number, scrollY: number, root: HTMLElement = document.documentElement): void {
+function applyRootLockState(
+  scrollX: number,
+  scrollY: number,
+  root: HTMLElement = document.documentElement,
+): void {
   root.dataset.languageSwitching = 'true';
   root.dataset.suppressArrival = 'true';
   root.dataset.languageViewportLocked = 'true';
@@ -118,8 +124,10 @@ function readLockedScroll(): Pick<LanguageSwitchState, 'scrollX' | 'scrollY'> {
   if (state) return { scrollX: state.scrollX, scrollY: state.scrollY };
 
   const root = document.documentElement;
-  const scrollX = Number.parseFloat(root.style.getPropertyValue('--language-lock-scroll-x')) || window.scrollX;
-  const scrollY = Number.parseFloat(root.style.getPropertyValue('--language-lock-scroll-y')) || window.scrollY;
+  const scrollX =
+    Number.parseFloat(root.style.getPropertyValue('--language-lock-scroll-x')) || window.scrollX;
+  const scrollY =
+    Number.parseFloat(root.style.getPropertyValue('--language-lock-scroll-y')) || window.scrollY;
   return { scrollX, scrollY };
 }
 
@@ -155,7 +163,10 @@ function ensureViewportBlockers(): void {
   if (document.documentElement.dataset.languageViewportBlockersBound === 'true') return;
   document.documentElement.dataset.languageViewportBlockersBound = 'true';
   document.addEventListener('wheel', preventIfLanguageLocked, { capture: true, passive: false });
-  document.addEventListener('touchmove', preventIfLanguageLocked, { capture: true, passive: false });
+  document.addEventListener('touchmove', preventIfLanguageLocked, {
+    capture: true,
+    passive: false,
+  });
   document.addEventListener('keydown', preventKeyIfLanguageLocked, { capture: true });
 }
 
@@ -172,7 +183,10 @@ export function clearLanguageSwitchState(): void {
   clearBodyLock();
 }
 
-export function markLanguageSwitchNavigation(targetPath: string = currentPath()): void {
+export function markLanguageSwitchNavigation(
+  targetPath: string = currentPath(),
+  focusInMenu = false,
+): void {
   if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
 
   const state: LanguageSwitchState = {
@@ -180,13 +194,38 @@ export function markLanguageSwitchNavigation(targetPath: string = currentPath())
     scrollX: window.scrollX,
     scrollY: window.scrollY,
     timestamp: Date.now(),
+    focusInMenu,
   };
 
   if (isStorageAvailable()) window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  lockLanguageSwitchViewport(state.scrollX, state.scrollY);
+  document.documentElement.dataset.languageSwitching = 'true';
+  document.documentElement.dataset.suppressArrival = 'true';
 }
 
-export function lockLanguageSwitchViewport(scrollX: number = window.scrollX, scrollY: number = window.scrollY): void {
+// Keep content usable during fetch and carry its latest viewport into the swap.
+window.addEventListener(
+  'scroll',
+  () => {
+    if (
+      document.documentElement.dataset.languageSwitching !== 'true' ||
+      document.documentElement.dataset.languageViewportLocked === 'true'
+    )
+      return;
+    const state = getLanguageSwitchState();
+    if (state && isStorageAvailable()) {
+      state.scrollX = window.scrollX;
+      state.scrollY = window.scrollY;
+      state.timestamp = Date.now();
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+  },
+  { passive: true },
+);
+
+export function lockLanguageSwitchViewport(
+  scrollX: number = window.scrollX,
+  scrollY: number = window.scrollY,
+): void {
   ensureViewportBlockers();
   applyRootLockState(scrollX, scrollY);
   applyBodyLock(scrollX, scrollY);
@@ -194,7 +233,8 @@ export function lockLanguageSwitchViewport(scrollX: number = window.scrollX, scr
 }
 
 export function restoreLanguageSwitchScroll(): void {
-  if (document.documentElement.dataset.languageSwitching !== 'true' && !getLanguageSwitchState()) return;
+  if (document.documentElement.dataset.languageSwitching !== 'true' && !getLanguageSwitchState())
+    return;
 
   const { scrollX, scrollY } = readLockedScroll();
   applyRootLockState(scrollX, scrollY);
@@ -211,7 +251,8 @@ export function doubleRestoreLanguageSwitchScroll(): void {
 }
 
 export function completeLanguageSwitchTransition(): void {
-  if (document.documentElement.dataset.languageSwitching !== 'true' && !getLanguageSwitchState()) return;
+  if (document.documentElement.dataset.languageSwitching !== 'true' && !getLanguageSwitchState())
+    return;
 
   const { scrollX, scrollY } = readLockedScroll();
   applyRootLockState(scrollX, scrollY);

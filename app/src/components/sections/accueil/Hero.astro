@@ -29,7 +29,7 @@
  */
 
 import { Image } from 'astro:assets';
-import logo from '../../../assets/placeholders/logo.svg';
+import logo from '../../../assets/brand/logo-orange-shadow.svg';
 import LanguageSwitcher from '../../chrome/LanguageSwitcher.astro';
 // ffmpeg is not available in the project environment. This supplied client
 // photograph is therefore used as the honest, real-image poster fallback.
@@ -67,16 +67,15 @@ const tagline = t('accueil.hero.tagline');
       src={logo}
       alt={t('common.brand.name')}
       width={220}
-      height={80}
+      height={220 * (logo.height / logo.width)}
       loading="eager"
       class="hero__logo-img"
     />
   </div>
 
-  <!-- Tagline: centered near the bottom. `data-split` opts it into the
-       SplitText char reveal (US-23); above-the-fold, so it plays on load.
-       This is the home page's single <h1> (per accessibility: one h1/page). -->
-  <h1 class="hero__tagline" data-split>
+  <!-- Desktop tagline starts only after 25% of the hero has scrolled away.
+       Kept out of the global reveal selector to avoid an arrival autoplay. -->
+  <h1 class="hero__tagline" data-hero-tagline>
     {tagline}
   </h1>
 </section>
@@ -128,7 +127,6 @@ const tagline = t('accueil.hero.tagline');
   .hero__logo-img {
     width: clamp(140px, 30vw, 220px);
     height: auto;
-    filter: brightness(0) invert(1);
   }
 
   .hero__languages {
@@ -166,7 +164,10 @@ const tagline = t('accueil.hero.tagline');
 
   @media (max-width: 639px) {
     .hero__logo {
-      top: calc(var(--content-padding) + 3.5rem);
+      top: calc(var(--content-padding) + 5rem);
+    }
+    .hero__logo-img {
+      width: clamp(180px, 52vw, 260px);
     }
   }
 
@@ -198,6 +199,7 @@ const tagline = t('accueil.hero.tagline');
 </style>
 
 <script>
+  import { gsap } from '../../../scripts/gsap';
   let cleanup: (() => void) | null = null;
 
   function initHeroVideo(): void {
@@ -221,8 +223,33 @@ const tagline = t('accueil.hero.tagline');
     };
 
     syncPlayback();
+    const hero = video.closest<HTMLElement>('.hero');
+    const tagline = hero?.querySelector<HTMLElement>('[data-hero-tagline]');
+    const media = gsap.matchMedia();
+    media.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
+      if (
+        !hero ||
+        !tagline ||
+        document.documentElement.dataset.suppressArrival === 'true' ||
+        document.documentElement.dataset.languageSwitching === 'true'
+      )
+        return;
+      gsap.from(tagline, {
+        opacity: 0,
+        y: 56,
+        duration: 1.1,
+        ease: 'power3.out',
+        scrollTrigger: {
+          id: 'home-hero-tagline',
+          trigger: hero,
+          start: () => `top+=${hero.offsetHeight * 0.25} top`,
+          once: true,
+        },
+      });
+    });
     reducedMotion.addEventListener('change', syncPlayback);
     cleanup = () => {
+      media.revert();
       reducedMotion.removeEventListener('change', syncPlayback);
       video.pause();
     };

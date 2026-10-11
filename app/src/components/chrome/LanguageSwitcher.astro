@@ -6,8 +6,9 @@
  *
  * Behaviour:
  *   - Each option is a `<button>` (not a link): clicking writes a `locale`
- *     cookie with a 1-year expiry on `path=/`, then plays a premium silk wipe
- *     before asking Astro ClientRouter to soft-navigate to the same URL.
+ *     cookie with a 1-year expiry on `path=/`, then immediately asks Astro
+ *     ClientRouter to soft-navigate to the same URL. A delayed connection status
+ *     avoids flashing an indicator for a fast response without delaying fetch.
  *     A full reload is kept as a robust fallback for SSR cookie refresh.
  *
  * Accessibility:
@@ -37,22 +38,23 @@ const t = Astro.locals.t;
 interface Props {
   /** Optional layout hook. */
   class?: string;
+  labels?: boolean;
 }
 
-const { class: className = '' } = Astro.props;
+const { class: className = '', labels = false } = Astro.props;
 const flags = { fr: franceFlag, en: unitedKingdomFlag, it: italyFlag };
 const navLabelTemplate = t('common.language.navLabelWithCurrent');
 const navLabelFallback = `${t('common.language.navLabel')}, ${t(`common.language.label.${currentLocale}`)}`;
-const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
-  ? navLabelFallback
-  : navLabelTemplate
-).replace(
-  '{current}',
-  t(`common.language.label.${currentLocale}`),
-);
+const navLabel = (
+  navLabelTemplate === 'common.language.navLabelWithCurrent' ? navLabelFallback : navLabelTemplate
+).replace('{current}', t(`common.language.label.${currentLocale}`));
 ---
 
-<nav class:list={['lang-switcher', className]} aria-label={navLabel}>
+<nav
+  class:list={['lang-switcher', className]}
+  aria-label={navLabel}
+  data-language-progress={t('ui.language.switchProgress')}
+>
   <ul class="lang-switcher__list">
     {
       locales.map((loc) => (
@@ -73,7 +75,9 @@ const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
               widths={[32, 48, 64]}
               sizes="32px"
             />
-            <span class="sr-only">{t(`common.language.label.${loc}`)}</span>
+            <span class:list={{ 'sr-only': !labels }}>
+              {labels ? loc.toUpperCase() : t(`common.language.label.${loc}`)}
+            </span>
           </button>
         </li>
       ))
@@ -103,6 +107,7 @@ const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.4rem;
     width: 44px;
     min-width: 44px;
     min-height: 44px;
@@ -147,6 +152,11 @@ const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
       transition: none;
     }
   }
+
+  :global(.menu__languages) .lang-switcher__btn {
+    width: auto;
+    padding-inline: 0.5rem;
+  }
 </style>
 
 <script>
@@ -154,30 +164,29 @@ const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
   import {
     completeLanguageSwitchTransition,
     doubleRestoreLanguageSwitchScroll,
+    getLanguageSwitchState,
     markLanguageSwitchNavigation,
     preserveLanguageSwitchViewportLock,
   } from '../../scripts/languageSwitchState';
 
-  const LANGUAGE_WIPE_COVERED_MS = 1180;
-  const TRANSITION_FALLBACK_MS = 2600;
-  const LANGUAGE_WIPE_EXIT_REMOVE_MS = 980;
   const HARD_RELOAD_FALLBACK_MS = 10000;
-  const LANGUAGE_WIPE_MARKUP = [
-    '<span class="language-wipe__silk"></span>',
-    '<span class="language-wipe__grain"></span>',
-    '<span class="language-wipe__gleam"></span>',
-    '<span class="language-wipe__thread"></span>',
-  ].join('');
+  let indicatorTimer = 0;
+  let fallbackTimer = 0;
+  let targetLocale: string | null = null;
+  let pendingText = '';
+  let focusInMenu = false;
 
   function ensureLanguageOverlay(): HTMLElement {
-    const existing = document.querySelector<HTMLElement>('[data-language-wipe]');
-    if (existing) return existing;
+    const existing = document.querySelector<HTMLElement>('[data-language-progress-status]');
+    if (existing && !existing.classList.contains('language-progress--exit')) return existing;
+    existing?.remove();
 
     const overlay = document.createElement('div');
-    overlay.className = 'language-wipe';
-    overlay.dataset.languageWipe = 'true';
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.innerHTML = LANGUAGE_WIPE_MARKUP;
+    overlay.className = 'language-progress';
+    overlay.dataset.languageProgressStatus = 'true';
+    overlay.setAttribute('role', 'status');
+    overlay.setAttribute('aria-live', 'polite');
+    overlay.textContent = pendingText;
     document.body.append(overlay);
     return overlay;
   }
@@ -190,24 +199,32 @@ const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
 
   function removeLanguageOverlay(): void {
     if (document.documentElement.dataset.languageSwitching !== 'true') return;
-
-    doubleRestoreLanguageSwitchScroll();
-
-    const overlays = document.querySelectorAll<HTMLElement>('[data-language-wipe]');
-    if (overlays.length === 0) {
-      window.setTimeout(completeLanguageSwitchTransition, 80);
+    window.clearTimeout(indicatorTimer);
+    if (targetLocale && document.documentElement.lang !== targetLocale) {
+      window.location.reload();
       return;
     }
-
+    window.clearTimeout(fallbackTimer);
+    const returnFocusToMenu = focusInMenu || getLanguageSwitchState()?.focusInMenu === true;
+    doubleRestoreLanguageSwitchScroll();
+    const overlays = document.querySelectorAll<HTMLElement>('[data-language-progress-status]');
     overlays.forEach((overlay) => {
-      overlay.classList.add('language-wipe--exit');
-      overlay.classList.remove('language-wipe--active');
-      overlay.classList.remove('language-wipe--covered');
-      window.setTimeout(() => {
-        overlay.remove();
-        if (document.querySelector('[data-language-wipe]')) return;
-        completeLanguageSwitchTransition();
-      }, LANGUAGE_WIPE_EXIT_REMOVE_MS);
+      overlay.classList.add('language-progress--exit');
+      window.setTimeout(() => overlay.remove(), 180);
+    });
+    // The restoration transaction, not the indicator, owns the brief body lock.
+    requestAnimationFrame(() => {
+      completeLanguageSwitchTransition();
+      if (targetLocale || returnFocusToMenu) {
+        // The swapped menu is closed/inert: return focus to its spool instead.
+        const focusTarget = returnFocusToMenu
+          ? document.querySelector<HTMLButtonElement>('[data-menu-trigger]')
+          : document.querySelector<HTMLButtonElement>(
+              `.lang-switcher:not(.menu__languages) .lang-switcher__btn[data-locale="${targetLocale}"]`,
+            );
+        focusTarget?.focus({ preventScroll: true });
+      }
+      targetLocale = null;
     });
   }
 
@@ -223,57 +240,53 @@ const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
     newDocument.documentElement.dataset.languageSwitching = 'true';
     newDocument.documentElement.dataset.suppressArrival = 'true';
 
-    const overlay = newDocument.createElement('div');
-    overlay.className = 'language-wipe language-wipe--covered';
-    overlay.dataset.languageWipe = 'true';
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.innerHTML = LANGUAGE_WIPE_MARKUP;
-    newBody.append(overlay);
+    const existing = document.querySelector('[data-language-progress-status]');
+    if (existing) newBody.append(newDocument.importNode(existing, true));
   }
 
   async function switchLanguage(loc: string): Promise<void> {
     if (document.documentElement.dataset.languageSwitching === 'true') return;
     if (loc === document.documentElement.lang) return;
-    const active = document.querySelector<HTMLButtonElement>(`.lang-switcher__btn[data-locale="${loc}"][aria-current="true"]`);
+    const active = document.querySelector<HTMLButtonElement>(
+      `.lang-switcher__btn[data-locale="${loc}"][aria-current="true"]`,
+    );
     if (active) return;
     document.documentElement.dataset.languageSwitching = 'true';
+    targetLocale = loc;
+    focusInMenu = Boolean(document.activeElement?.closest('.menu__languages'));
+    const source = document.documentElement.lang;
+    const template =
+      document.querySelector<HTMLElement>('[data-language-progress]')?.dataset.languageProgress ??
+      '';
+    pendingText = template
+      .replace('{source}', source.toUpperCase())
+      .replace('{destination}', loc.toUpperCase());
     setLocaleCookie(loc);
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    markLanguageSwitchNavigation(target);
+    markLanguageSwitchNavigation(target, focusInMenu);
     const scheduleHardReloadFallback = (): void => {
-      window.setTimeout(() => {
+      fallbackTimer = window.setTimeout(() => {
         if (document.documentElement.dataset.languageSwitching === 'true') window.location.reload();
       }, HARD_RELOAD_FALLBACK_MS);
     };
 
-    if (reducedMotion) {
-      scheduleHardReloadFallback();
-      try {
-        await navigate(target, { history: 'replace' });
-      } catch {
-        window.location.reload();
-      }
-      return;
-    }
-
-    const overlay = ensureLanguageOverlay();
-    const runNavigation = (): void => {
-      void navigate(target, { history: 'replace' }).catch(() => window.location.reload());
-    };
-    let navigated = false;
-    const navigateOnce = (): void => {
-      if (navigated) return;
-      navigated = true;
-      overlay.classList.add('language-wipe--covered');
-      runNavigation();
-    };
-    requestAnimationFrame(() => overlay.classList.add('language-wipe--active'));
-
-    window.setTimeout(navigateOnce, LANGUAGE_WIPE_COVERED_MS);
-    window.setTimeout(navigateOnce, TRANSITION_FALLBACK_MS);
+    indicatorTimer = window.setTimeout(() => {
+      if (document.documentElement.dataset.languageSwitching === 'true') ensureLanguageOverlay();
+    }, 180);
     scheduleHardReloadFallback();
+    try {
+      // Astro treats same-page URLs with a hash as anchor-only navigation:
+      // it skips preparation/SSR, so the locale cookie would not be rendered.
+      // Reload the unchanged URL and let the stored transaction restore scroll.
+      if (window.location.hash) {
+        window.location.reload();
+        return;
+      }
+      await navigate(target, { history: 'replace' });
+    } catch {
+      window.location.reload();
+    }
   }
 
   /**
@@ -296,7 +309,11 @@ const navLabel = (navLabelTemplate === 'common.language.navLabelWithCurrent'
         const loc = btn.dataset.locale;
         if (!loc) return;
         if (loc === document.documentElement.lang) return;
-        if (btn.getAttribute('aria-current') === 'true' || btn.getAttribute('aria-pressed') === 'true') return;
+        if (
+          btn.getAttribute('aria-current') === 'true' ||
+          btn.getAttribute('aria-pressed') === 'true'
+        )
+          return;
         void switchLanguage(loc);
       });
     });

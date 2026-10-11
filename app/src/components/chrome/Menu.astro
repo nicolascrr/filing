@@ -1,26 +1,9 @@
 ---
-/**
- * Menu — custom spool/thread navigation.
- *
- * Adapts the supplied standalone SVG + Web Animations demo while keeping the
- * site's i18n labels, language switcher behavior and Astro view-transition
- * lifecycle cleanup.
- */
 import { navItems } from '../../data/nav';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 
 const t = Astro.locals.t;
-const triggerLabel = t('common.menu.triggerLabel');
-const closeLabel = t('common.menu.closeLabel');
-const dialogLabel = t('common.menu.dialogLabel');
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
-const menuRowStart = 96;
-const menuRowStep = 62;
-const menuInnerBottom = 438;
-const menuLanguageTarget = 25;
-const menuLastSeparator = menuRowStart + menuRowStep * 4;
-const menuLanguageTop =
-  menuLastSeparator + (menuInnerBottom - menuLastSeparator - menuLanguageTarget) / 2;
 ---
 
 <div class="nav-block" data-thread-menu>
@@ -31,9 +14,9 @@ const menuLanguageTop =
     data-menu-trigger
     aria-expanded="false"
     aria-controls="threadStage"
-    aria-label={triggerLabel}
-    data-label-open={triggerLabel}
-    data-label-close={closeLabel}
+    aria-label={t('common.menu.triggerLabel')}
+    data-label-open={t('common.menu.triggerLabel')}
+    data-label-close={t('common.menu.closeLabel')}
   >
     <svg
       class="spool-icon"
@@ -58,115 +41,40 @@ const menuLanguageTop =
       <circle cx="48.5" cy="53.5" r="1.8" fill="currentColor" stroke="none"></circle>
     </svg>
   </button>
-
   <div
     class="thread-stage"
     id="threadStage"
     data-thread-stage
     role="dialog"
     aria-modal="true"
-    aria-label={dialogLabel}
+    aria-label={t('common.menu.dialogLabel')}
     aria-hidden="true"
-    style={`--menu-language-top: ${menuLanguageTop}px;`}
+    inert
   >
-    <svg
-      class="thread-svg"
-      id="threadMenu"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 320 460"
-      overflow="visible"
-      aria-hidden="false"
-    >
-      <defs>
-        <linearGradient
-          id="clothGradient"
-          x1="24"
-          y1="62"
-          x2="296"
-          y2="438"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0" stop-color="var(--color-footer)"></stop>
-          <stop offset="0.52" stop-color="#383532"></stop>
-          <stop offset="1" stop-color="#242321"></stop>
-        </linearGradient>
-        <filter id="clothTexture" x="0" y="0" width="100%" height="100%">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.92"
-            numOctaves="2"
-            seed="8"
-            result="noise"></feTurbulence>
-          <feColorMatrix type="saturate" values="0"></feColorMatrix>
-          <feComponentTransfer>
-            <feFuncA type="table" tableValues="0 0.08"></feFuncA>
-          </feComponentTransfer>
-        </filter>
-        <filter id="softShadow" x="-20%" y="-10%" width="140%" height="130%">
-          <feDropShadow dx="0" dy="14" stdDeviation="13" flood-color="#2b2b2b" flood-opacity="0.18"
-          ></feDropShadow>
-        </filter>
-      </defs>
-
-      <!--
-        The filament and panel outline retain their original independent draw.
-        A closed, stroke-free underlay fills the narrow raccord between them.
-      -->
-      <path id="leadingThread" data-leading-thread d="M298 2V34C298 50 296 58 290 62"></path>
-      <path
-        id="menuFill"
-        data-menu-fill
-        d="M290 62H52Q30 62 30 84V416Q30 438 52 438H268Q290 438 290 416V62Z"
-      ></path>
-      <path
-        id="textureFill"
-        data-texture-fill
-        d="M290 62H52Q30 62 30 84V416Q30 438 52 438H268Q290 438 290 416V62Z"
-      ></path>
-      <path
-        id="menuOutline"
-        data-menu-outline
-        d="M290 62H52Q30 62 30 84V416Q30 438 52 438H268Q290 438 290 416V62Z"
-      ></path>
-      <path id="topStitch" data-top-stitch d={`M56 ${menuRowStart}H264`}></path>
-      <g id="menuSeparators" data-menu-separators>
-        {
-          Array.from({ length: 4 }, (_, index) => {
-            const y = menuRowStart + menuRowStep * (index + 1);
-            return <path class="separator" data-separator d={`M56 ${y}H264`}></path>;
-          })
-        }
-      </g>
-
-      <g id="menuItems" data-menu-items>
-        {
-          navItems.map((item, index) => {
-            const href = item.href;
-            const label = t(item.labelKey);
-            const isActive = (href.replace(/\/$/, '') || '/') === currentPath;
-            const rowTop = menuRowStart + menuRowStep * index;
-            const y = rowTop + menuRowStep / 2;
-            return (
-              <a
-                class:list={['svg-link', isActive && 'svg-link--active']}
-                href={href}
-                aria-label={label}
-                aria-current={isActive ? 'page' : undefined}
-                data-menu-link
-              >
-                <title>{label}</title>
-                <rect x="48" y={rowTop} width="224" height={menuRowStep} fill="transparent"
-                ></rect>
-                <text x="160" y={y} text-anchor="middle">
-                  {label}
-                </text>
-              </a>
-            );
-          })
-        }
-      </g>
+    <svg class="menu__filets" aria-hidden="true" focusable="false">
+      <path data-menu-thread pathLength="1"></path>
     </svg>
-    <div class="menu__language-panel" data-menu-language-panel>
+    <div class="menu__panel">
+      <nav aria-label={t('common.menu.dialogLabel')}>
+        <ol class="menu__grid">
+          {
+            navItems.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  class="menu__link"
+                  data-menu-link
+                  aria-current={
+                    (item.href.replace(/\/$/, '') || '/') === currentPath ? 'page' : undefined
+                  }
+                >
+                  <span class="menu__title"><span class="menu__label">{t(item.labelKey)}</span></span>
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
       <LanguageSwitcher class="menu__languages" />
     </div>
   </div>
@@ -174,6 +82,11 @@ const menuLanguageTop =
 
 <style>
   .nav-block {
+    --menu-thread-color: var(--color-brand-orange);
+    --menu-radius: 12px;
+    --menu-thread-width: 1.5px;
+    --menu-thread-gap: 28px;
+    --menu-hover-duration: 0.3s;
     position: fixed;
     top: var(--content-padding);
     right: var(--content-padding);
@@ -181,75 +94,17 @@ const menuLanguageTop =
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    width: min(340px, calc(100vw - 2 * var(--content-padding)));
-    color: var(--color-brand-orange);
+    width: min(480px, calc(100vw - 2 * var(--content-padding)));
+    color: var(--menu-thread-color);
     pointer-events: none;
   }
-
   .nav-block[data-on-dark='true'] {
-    color: var(--color-warm-white);
+    --menu-thread-color: var(--color-warm-white);
   }
-
   .nav-block[data-lightbox-blocked='true'] {
     visibility: hidden;
     pointer-events: none;
   }
-
-  .menu__language-panel {
-    position: absolute;
-    left: 50%;
-    right: auto;
-    top: var(--menu-language-top);
-    bottom: auto;
-    z-index: 6;
-    width: max-content;
-    color: inherit;
-    opacity: 0;
-    transform: translate(-50%, 10px);
-    pointer-events: none;
-  }
-
-  :global(.menu__languages .lang-switcher__list) {
-    height: 25px;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    line-height: 0;
-  }
-
-  :global(.menu__languages .lang-switcher__item) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 25px;
-    height: 25px;
-    flex: 0 0 25px;
-    line-height: 0;
-  }
-
-  :global(.menu__languages .lang-switcher__btn) {
-    width: 25px;
-    height: 25px;
-    min-width: 0;
-    min-height: 0;
-    padding: 0;
-    flex: 0 0 25px;
-    line-height: 0;
-    vertical-align: top;
-  }
-
-  :global(.menu__languages .lang-switcher__flag) {
-    display: block;
-    width: 25px !important;
-    height: 25px !important;
-    min-width: 25px;
-    min-height: 25px;
-    max-width: 25px;
-    max-height: 25px;
-    object-fit: contain;
-    object-position: center;
-  }
-
   .icon-frame {
     position: relative;
     z-index: 5;
@@ -266,142 +121,152 @@ const menuLanguageTop =
     color: inherit;
     pointer-events: auto;
   }
-
-  .icon-frame:hover,
-  .icon-frame:focus-visible {
-    color: var(--color-brand-orange);
-  }
-
-  .nav-block[data-on-dark='true'] .icon-frame:hover,
-  .nav-block[data-on-dark='true'] .icon-frame:focus-visible {
-    color: var(--color-warm-white);
-  }
-
   .spool-icon {
-    display: block;
     width: 100%;
     height: 100%;
     transform-origin: center;
-    will-change: transform;
   }
-
   .thread-stage {
     position: relative;
-    align-self: flex-end;
-    width: 320px;
-    height: 460px;
-    margin-top: -4px;
-    overflow: visible;
+    width: 100%;
+    padding-top: var(--menu-thread-gap);
     visibility: hidden;
+    opacity: 0;
     pointer-events: none;
-    transform: scaleY(0);
-    transform-origin: top center;
   }
-
   .thread-stage[aria-hidden='false'] {
     pointer-events: auto;
   }
-
-  .thread-svg {
+  .menu__panel {
+    position: relative;
+    padding: 16px;
+    max-height: calc(100dvh - 44px - 2 * var(--content-padding) - var(--menu-thread-gap));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--color-charcoal);
+    color: var(--color-warm-white);
+    border-radius: var(--menu-radius);
+    box-shadow: var(--shadow-lg);
+  }
+  .menu__filets {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     width: 100%;
     height: 100%;
     overflow: visible;
-  }
-
-  #leadingThread,
-  #menuOutline,
-  #topStitch,
-  .separator {
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  #leadingThread,
-  #menuOutline {
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-opacity: 0.86;
-  }
-
-  #topStitch {
-    stroke: var(--color-brand-orange);
-    stroke-width: 1;
-    stroke-opacity: 0.42;
-  }
-
-  #menuFill {
-    fill: url('#clothGradient');
-    filter: url('#softShadow');
-    opacity: 0;
-  }
-
-  #textureFill {
-    fill: var(--color-footer);
-    filter: url('#clothTexture');
-    opacity: 0;
     pointer-events: none;
   }
-
-  .separator {
-    stroke: var(--color-brand-orange);
-    stroke-width: 1;
-    stroke-opacity: 0.42;
+  .menu__filets path {
+    fill: none;
+    stroke: var(--menu-thread-color);
+    stroke-width: var(--menu-thread-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
   }
-
-  #menuSeparators {
-    opacity: 0;
+  .menu__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: hidden;
+    border-radius: var(--menu-radius);
   }
-
-  #menuItems {
-    opacity: 0;
+  .menu__grid li {
+    min-width: 0;
+    border-bottom: 1px solid rgb(248 246 243 / 18%);
+    transition: background-color var(--menu-hover-duration) var(--ease-luxury);
   }
-
-  .svg-link {
-    color: var(--color-warm-white);
-    text-decoration: none;
+  .menu__grid li:is(:hover, :focus-within) {
+    background-color: var(--color-brand-orange);
   }
-
-  .svg-link text {
+  .menu__link {
+    position: relative;
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    gap: 1.25rem;
+    min-height: 78px;
+    padding: 17px calc(1.5% + 16px);
+    overflow: hidden;
     font-family: var(--font-heading);
-    font-size: 19px;
-    font-weight: 400;
-    letter-spacing: 0.6px;
-    fill: currentColor;
-    text-transform: uppercase;
-    dominant-baseline: middle;
-    transition: fill var(--duration-base) var(--ease-luxury);
+    font-size: var(--text-xl);
+    text-decoration: none;
+    transition: color var(--menu-hover-duration) var(--ease-luxury);
   }
-
-  .svg-link:hover,
-  .svg-link:focus-visible,
-  .svg-link--active {
+  .menu__link[aria-current='page'] {
     color: var(--color-brand-orange);
-    outline: none;
   }
-
-  .svg-link:focus-visible text {
-    stroke: color-mix(in srgb, var(--color-gold) 26%, transparent);
-    stroke-width: 0.6;
-    paint-order: stroke fill;
+  .menu__grid li:is(:hover, :focus-within) .menu__link {
+    color: var(--color-charcoal);
   }
-
-  @media (max-width: 639px) {
-    .nav-block {
-      width: min(327px, calc(100vw - 2 * var(--content-padding)));
+  .menu__title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .menu__label {
+    display: inline-block;
+    transform-origin: left center;
+    transition: transform var(--menu-hover-duration) var(--ease-luxury);
+  }
+  .menu__grid li:is(:hover, :focus-within) .menu__label {
+    transform: scale(1.03);
+  }
+  /* Same upward slide as the footer's Uiverse contact icons. */
+  .menu__grid li:is(:hover, :focus-within) .menu__title {
+    animation: menu-title-slide-in var(--menu-hover-duration) var(--ease-luxury) both;
+  }
+  .menu__link:focus-visible {
+    outline: 2px solid var(--color-warm-white);
+    outline-offset: -4px;
+  }
+  .menu__grid li .menu__link:active .menu__label {
+    transform: scale(0.98);
+  }
+  @keyframes menu-title-slide-in {
+    from {
+      transform: translateY(50px);
+      opacity: 0;
     }
-
-    .thread-stage {
-      align-self: flex-end;
-      max-width: calc(100vw - 2 * var(--content-padding));
+    to {
+      transform: translateY(0);
+      opacity: 1;
     }
   }
-
+  :global(.menu__languages) {
+    margin-top: 12px;
+  }
+  :global(.menu__languages .lang-switcher__list) {
+    justify-content: center;
+    gap: 12px;
+  }
+  @media (min-width: 640px) {
+    .menu__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .menu__link {
+      min-height: 114px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .menu__grid li:nth-child(odd) {
+      border-right: 1px solid rgb(248 246 243 / 18%);
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .spool-icon,
-    .svg-link text {
+    .menu__grid li,
+    .menu__link,
+    .menu__label {
       transition: none;
+    }
+    .menu__grid li:is(:hover, :focus-within) .menu__label,
+    .menu__grid li .menu__link:active .menu__label {
+      transform: none;
+    }
+    .menu__grid li:is(:hover, :focus-within) .menu__title {
+      animation: none;
     }
   }
 </style>
@@ -409,528 +274,306 @@ const menuLanguageTop =
 <script>
   import { gsap } from '../../scripts/gsap';
 
-  type MenuElements = {
-    root: HTMLElement;
-    iconFrame: HTMLButtonElement;
-    spoolIcon: SVGElement;
-    stage: HTMLElement;
-    leadingThread: SVGPathElement;
-    menuOutline: SVGPathElement;
-    topStitch: SVGPathElement;
-    menuFill: SVGPathElement;
-    textureFill: SVGPathElement;
-    menuSeparators: SVGGElement;
-    menuItems: SVGGElement;
-    menuLanguagePanel: HTMLElement;
-    links: SVGElement[];
-  };
+  type MenuState = 'closed' | 'opening' | 'open' | 'closing';
+  const cleanups: Array<() => void> = [];
 
-  const menuCleanups: Array<() => void> = [];
-
-  function getElements(navBlock: HTMLElement): MenuElements | null {
-    const iconFrame = navBlock.querySelector<HTMLButtonElement>('#iconFrame');
-    const spoolIcon = navBlock.querySelector<SVGElement>('#spoolIcon');
-    const stage = navBlock.querySelector<HTMLElement>('#threadStage');
-    const leadingThread = navBlock.querySelector<SVGPathElement>('#leadingThread');
-    const menuOutline = navBlock.querySelector<SVGPathElement>('#menuOutline');
-    const topStitch = navBlock.querySelector<SVGPathElement>('#topStitch');
-    const menuFill = navBlock.querySelector<SVGPathElement>('#menuFill');
-    const textureFill = navBlock.querySelector<SVGPathElement>('#textureFill');
-    const menuSeparators = navBlock.querySelector<SVGGElement>('#menuSeparators');
-    const menuItems = navBlock.querySelector<SVGGElement>('#menuItems');
-    const menuLanguagePanel = navBlock.querySelector<HTMLElement>('[data-menu-language-panel]');
-    if (
-      !iconFrame ||
-      !spoolIcon ||
-      !stage ||
-      !leadingThread ||
-      !menuOutline ||
-      !topStitch ||
-      !menuFill ||
-      !textureFill ||
-      !menuSeparators ||
-      !menuItems ||
-      !menuLanguagePanel
-    )
-      return null;
-
-    return {
-      root: navBlock,
-      iconFrame,
-      spoolIcon,
-      stage,
-      leadingThread,
-      menuOutline,
-      topStitch,
-      menuFill,
-      textureFill,
-      menuSeparators,
-      menuItems,
-      menuLanguagePanel,
-      links: Array.from(navBlock.querySelectorAll<SVGElement>('[data-menu-link]')),
-    };
-  }
-
-  function prepareStroke(path: SVGPathElement): number {
-    const length = path.getTotalLength();
-    path.style.strokeDasharray = String(length);
-    path.style.strokeDashoffset = String(length);
-    return length;
-  }
-
-  function initThreadMenu(navBlock: HTMLElement): () => void {
-    if (navBlock.dataset.bound === 'true') return () => undefined;
-    const elements = getElements(navBlock);
-    if (!elements) return () => undefined;
-    navBlock.dataset.bound = 'true';
-
-    const {
-      iconFrame,
-      spoolIcon,
-      stage,
-      leadingThread,
-      menuOutline,
-      topStitch,
-      menuFill,
-      textureFill,
-      menuSeparators,
-      menuItems,
-      menuLanguagePanel,
-      links,
-    } = elements;
-    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const openHeight = 460;
-    const animationContext = gsap.context(() => undefined, navBlock);
-    const activeAnimations = new Set<gsap.core.Tween>();
-    const leadingLength = prepareStroke(leadingThread);
-    const outlineLength = prepareStroke(menuOutline);
-    const stitchLength = prepareStroke(topStitch);
-    let isOpen = false;
-    let isAnimating = false;
-    let isClosing = false;
-    let animationRunId = 0;
-    let contrastFrame = 0;
-
-    const getReducedMotion = (): boolean => reducedMotionQuery.matches;
-    const cancelRunningAnimations = (): void => {
-      activeAnimations.forEach((animation) => animation.kill());
-      activeAnimations.clear();
-    };
-    const getFocusableElements = (): Array<HTMLElement | SVGElement> => {
-      const focusableSelector = [
-        'a[href]',
-        'button:not([disabled])',
-        '[tabindex]:not([tabindex="-1"])',
-      ].join(',');
-
-      return Array.from(
-        elements.root.querySelectorAll<HTMLElement | SVGElement>(focusableSelector),
-      ).filter((element) => {
-        if (element.hasAttribute('disabled') || element.getAttribute('aria-hidden') === 'true')
-          return false;
-        if (element instanceof HTMLElement)
-          return element.offsetParent !== null || element === iconFrame;
-        return element.getClientRects().length > 0;
-      });
-    };
-    const isCurrentAnimationRun = (runId: number): boolean => runId === animationRunId && isOpen;
-    const resolveEase = (easing: string): string => {
-      if (easing === 'ease-in') return 'power2.in';
-      if (easing === 'ease-out') return 'power2.out';
-      if (easing.includes('.22,1,.36,1')) return 'power3.out';
-      if (easing.includes('.55,0,1,.45')) return 'power2.in';
-      return 'power2.inOut';
-    };
-    const animateElement = (
-      element: Element,
-      keyframes: Array<Record<string, string | number>>,
-      options: { duration: number; easing: string },
-    ): Promise<void> => {
-      const first = keyframes[0] ?? {};
-      const last = keyframes.at(-1) ?? {};
-      return new Promise((resolve) => {
-        let tween: gsap.core.Tween | null = null;
-        animationContext.add(() => {
-          tween = gsap.fromTo(element, first, {
-            ...last,
-            duration: options.duration / 1000,
-            ease: resolveEase(options.easing),
-            overwrite: 'auto',
-            onComplete: () => {
-              if (tween) activeAnimations.delete(tween);
-              resolve();
-            },
-            onInterrupt: () => {
-              if (tween) activeAnimations.delete(tween);
-              resolve();
-            },
-          });
-        });
-        if (tween) activeAnimations.add(tween);
-      });
-    };
-    const rotateSpool = async (degrees: number, duration: number): Promise<void> => {
-      const currentTransform = spoolIcon.style.transform || 'rotate(0deg)';
-      await animateElement(
-        spoolIcon,
-        [{ transform: currentTransform }, { transform: `rotate(${degrees}deg)` }],
-        {
-          duration: getReducedMotion() ? 1 : duration,
-          easing: 'cubic-bezier(.65,0,.35,1)',
-        },
+  function initMenu(root: HTMLElement): () => void {
+    const trigger = root.querySelector<HTMLButtonElement>('[data-menu-trigger]');
+    const spool = root.querySelector<SVGElement>('.spool-icon');
+    const stage = root.querySelector<HTMLElement>('[data-thread-stage]');
+    const panel = root.querySelector<HTMLElement>('.menu__panel');
+    const threadSvg = root.querySelector<SVGSVGElement>('.menu__filets');
+    const thread = root.querySelector<SVGPathElement>('[data-menu-thread]');
+    const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-menu-link]'));
+    const tiles = Array.from(root.querySelectorAll<HTMLElement>('.menu__grid > li'));
+    if (!trigger || !spool || !stage || !panel || !threadSvg || !thread) return () => undefined;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const context = gsap.context(() => undefined, root);
+    let state: MenuState = 'closed';
+    let generation = 0;
+    let disposed = false;
+    let animation: gsap.core.Timeline | null = null;
+    let rotation: gsap.core.Tween | null = null;
+    const updateGeometry = (): void => {
+      if (disposed) return;
+      const styles = getComputedStyle(root);
+      const { width, height } = panel.getBoundingClientRect();
+      if (!width || !height) return;
+      const gap = parseFloat(styles.getPropertyValue('--menu-thread-gap'));
+      const inset = parseFloat(styles.getPropertyValue('--menu-thread-width')) / 2;
+      const radius = Math.min(
+        parseFloat(styles.getPropertyValue('--menu-radius')),
+        width / 2,
+        height / 2,
       );
-      spoolIcon.style.transform = `rotate(${degrees}deg)`;
+      const arc = radius - inset;
+      const right = width - inset;
+      const bottom = gap + height - inset;
+      const top = gap + inset;
+      const cx = width - radius;
+      const cy = gap + radius;
+      const joinX = cx + arc / Math.SQRT2;
+      const joinY = cy - arc / Math.SQRT2;
+      // Stop one stroke width before the junction: the round cap touches it
+      // without painting the connector/outline junction a second time.
+      const endAngle = -Math.PI / 4 + 2 * Math.asin(inset / arc);
+      const endX = cx + arc * Math.cos(endAngle);
+      const endY = cy + arc * Math.sin(endAngle);
+      // Pixel-sized coordinates keep the CSS radius intact at every aspect ratio.
+      threadSvg.setAttribute('viewBox', `0 0 ${width} ${gap + height}`);
+      thread.setAttribute(
+        'd',
+        `M${width - 20} 0V12Q${width - 20} ${gap} ${joinX} ${joinY}` +
+        `A${arc} ${arc} 0 0 0 ${cx} ${top}` +
+        `H${radius}A${arc} ${arc} 0 0 0 ${inset} ${gap + radius}` +
+        `V${gap + height - radius}A${arc} ${arc} 0 0 0 ${radius} ${bottom}` +
+        `H${cx}A${arc} ${arc} 0 0 0 ${right} ${gap + height - radius}` +
+        `V${cy}A${arc} ${arc} 0 0 0 ${endX} ${endY}`,
+      );
     };
-    const drawPath = async (
-      path: SVGPathElement,
-      length: number,
-      duration: number,
-      easing: string,
-    ): Promise<void> => {
-      await animateElement(path, [{ strokeDashoffset: length }, { strokeDashoffset: 0 }], {
-        duration: getReducedMotion() ? 1 : duration,
-        easing,
+    const geometryObserver = new ResizeObserver(updateGeometry);
+    geometryObserver.observe(panel);
+    const heroes = Array.from(document.querySelectorAll<HTMLElement>('.hero, .page-hero'));
+    const setState = (next: MenuState): void => {
+      state = next;
+      root.dataset.menuState = next;
+    };
+    const rotate = (degrees: number, duration: number): void => {
+      rotation?.kill();
+      context.add(() => {
+        if (reduced.matches) {
+          gsap.set(spool, { rotation: degrees });
+          return;
+        }
+        // gsap.to starts from the rendered hover rotation, never from zero.
+        rotation = gsap.to(spool, {
+          rotation: degrees,
+          duration: reduced.matches ? 0 : duration,
+          ease: 'power3.out',
+          overwrite: 'auto',
+        });
       });
-      path.style.strokeDashoffset = '0';
     };
-    const erasePath = async (
-      path: SVGPathElement,
-      length: number,
-      duration: number,
-      easing: string,
-    ): Promise<void> => {
-      await animateElement(path, [{ strokeDashoffset: 0 }, { strokeDashoffset: length }], {
-        duration: getReducedMotion() ? 1 : duration,
-        easing,
+    const setA11y = (open: boolean): void => {
+      trigger.setAttribute('aria-expanded', String(open));
+      trigger.setAttribute(
+        'aria-label',
+        (open ? trigger.dataset.labelClose : trigger.dataset.labelOpen) ?? '',
+      );
+      stage.setAttribute('aria-hidden', String(!open));
+      stage.inert = !open;
+    };
+    const close = (restoreFocus = false, immediate = false): void => {
+      contrast();
+      if (state === 'closed') return;
+      const run = ++generation;
+      animation?.kill();
+      setState('closing');
+      setA11y(false);
+      rotate(0, 0.32);
+      if (immediate || reduced.matches) {
+        context.add(() => {
+          gsap.set(stage, { opacity: 0 });
+          gsap.set(thread, { strokeDashoffset: 1 });
+        });
+        stage.style.visibility = 'hidden';
+        setState('closed');
+        if (restoreFocus) trigger.focus({ preventScroll: true });
+        return;
+      }
+      context.add(() => {
+        animation = gsap
+          .timeline({
+            onComplete: () => {
+              if (disposed || run !== generation) return;
+              stage.style.visibility = 'hidden';
+              setState('closed');
+            },
+          })
+          .to(thread, { strokeDashoffset: 1, duration: 0.32, ease: 'power2.in' }, 0)
+          .to(
+            stage,
+            {
+              opacity: 0,
+              duration: immediate || reduced.matches ? 0 : 0.32,
+              ease: 'power2.in',
+            },
+            0,
+          );
       });
-      path.style.strokeDashoffset = String(length);
+      if (restoreFocus) trigger.focus({ preventScroll: true });
     };
-    const setOpenA11y = (): void => {
-      iconFrame.setAttribute('aria-expanded', 'true');
-      iconFrame.setAttribute('aria-label', iconFrame.dataset.labelClose ?? '');
-      stage.setAttribute('aria-hidden', 'false');
-    };
-    const setClosedA11y = (): void => {
-      iconFrame.setAttribute('aria-expanded', 'false');
-      iconFrame.setAttribute('aria-label', iconFrame.dataset.labelOpen ?? '');
-      stage.setAttribute('aria-hidden', 'true');
-    };
-    const focusFirstLink = (): void => {
+    const open = (): void => {
+      contrast();
+      const run = ++generation;
+      animation?.kill();
+      updateGeometry();
+      setState('opening');
+      setA11y(true);
+      stage.style.visibility = 'visible';
+      rotate(90, 0.45);
+      if (reduced.matches) {
+        context.add(() => {
+          gsap.set(stage, { opacity: 1 });
+          gsap.set(thread, { strokeDashoffset: 0 });
+          gsap.set(tiles, { y: 0 });
+        });
+        setState('open');
+        links[0]?.focus({ preventScroll: true });
+        return;
+      }
+      context.add(() => {
+        animation = gsap
+          .timeline({
+            onComplete: () => {
+              if (disposed || run !== generation) return;
+              setState('open');
+            },
+          })
+          .to(
+            stage,
+            { opacity: 1, duration: reduced.matches ? 0 : 0.28, ease: 'power3.out' },
+            0,
+          )
+          .to(thread, { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out' }, 0)
+          .fromTo(
+            tiles,
+            { y: 20 },
+            {
+              y: 0,
+              duration: reduced.matches ? 0 : 0.8,
+              stagger: reduced.matches ? 0 : 0.07,
+              ease: 'power3.out',
+            },
+            0,
+          );
+      });
+      // Links and flags are operable immediately, not after the decoration.
       links[0]?.focus({ preventScroll: true });
     };
-    const resetClosedStyles = (): void => {
-      stage.style.height = `${openHeight}px`;
-      stage.style.visibility = 'hidden';
-      stage.style.opacity = '0';
-      stage.style.transform = 'scaleY(0)';
-      menuItems.style.opacity = '0';
-      menuItems.style.transform = 'translateY(18px)';
-      menuSeparators.style.opacity = '0';
-      menuLanguagePanel.style.opacity = '0';
-      menuLanguagePanel.style.transform = 'translate(-50%, 10px)';
-      menuLanguagePanel.style.pointerEvents = 'none';
-      menuFill.style.opacity = '0';
-      textureFill.style.opacity = '0';
-      leadingThread.style.strokeDashoffset = String(leadingLength);
-      menuOutline.style.strokeDashoffset = String(outlineLength);
-      topStitch.style.strokeDashoffset = String(stitchLength);
-      spoolIcon.style.transform = 'rotate(0deg)';
-      isClosing = false;
-      setClosedA11y();
+    const onClick = (): void => {
+      if (state === 'closed' || state === 'closing') open();
+      else close();
     };
-
-    const openMenu = async (): Promise<void> => {
-      if (isOpen || isAnimating) return;
-      const runId = ++animationRunId;
-      isOpen = true;
-      isAnimating = true;
-      isClosing = false;
-      setOpenA11y();
-      stage.style.visibility = 'visible';
-      await rotateSpool(90, 360);
-      if (!isCurrentAnimationRun(runId)) return;
-      await animateElement(
-        stage,
-        [
-          { opacity: 0, transform: 'scaleY(0)' },
-          { opacity: 1, transform: 'scaleY(1)' },
-        ],
-        {
-          duration: getReducedMotion() ? 1 : 190,
-          easing: 'ease-out',
-        },
-      );
-      if (!isCurrentAnimationRun(runId)) return;
-      await drawPath(leadingThread, leadingLength, 300, 'cubic-bezier(.22,1,.36,1)');
-      if (!isCurrentAnimationRun(runId)) return;
-      await drawPath(menuOutline, outlineLength, 665, 'cubic-bezier(.45,0,.15,1)');
-      if (!isCurrentAnimationRun(runId)) return;
-      await Promise.all([
-        drawPath(topStitch, stitchLength, 250, 'ease-out'),
-        animateElement(menuFill, [{ opacity: 0 }, { opacity: 1 }], {
-          duration: getReducedMotion() ? 1 : 300,
-          easing: 'ease-out',
-        }),
-        animateElement(textureFill, [{ opacity: 0 }, { opacity: 1 }], {
-          duration: getReducedMotion() ? 1 : 360,
-          easing: 'ease-out',
-        }),
-      ]);
-      if (!isCurrentAnimationRun(runId)) return;
-      await Promise.all([
-        animateElement(menuSeparators, [{ opacity: 0 }, { opacity: 1 }], {
-          duration: getReducedMotion() ? 1 : 260,
-          easing: 'ease-out',
-        }),
-        animateElement(
-          menuItems,
-          [
-            { opacity: 0, transform: 'translateY(18px)' },
-            { opacity: 1, transform: 'translateY(0)' },
-          ],
-          {
-            duration: getReducedMotion() ? 1 : 300,
-            easing: 'cubic-bezier(.22,1,.36,1)',
-          },
-        ),
-        animateElement(
-          menuLanguagePanel,
-          [
-            { opacity: 0, transform: 'translate(-50%, 10px)' },
-            { opacity: 1, transform: 'translate(-50%, 0)' },
-          ],
-          {
-            duration: getReducedMotion() ? 1 : 300,
-            easing: 'cubic-bezier(.22,1,.36,1)',
-          },
-        ),
-      ]);
-      if (!isCurrentAnimationRun(runId)) return;
-      menuSeparators.style.opacity = '1';
-      menuItems.style.opacity = '1';
-      menuItems.style.transform = 'translateY(0)';
-      menuLanguagePanel.style.opacity = '1';
-      menuLanguagePanel.style.transform = 'translate(-50%, 0)';
-      menuLanguagePanel.style.pointerEvents = 'auto';
-      isAnimating = false;
-      focusFirstLink();
+    const onEnter = (): void => {
+      if (state === 'closed') rotate(90, 0.6);
     };
-
-    const closeMenu = async (restoreFocus = false, immediate = false): Promise<void> => {
-      if (!isOpen && !isAnimating) return;
-      if (immediate) {
-        animationRunId += 1;
-        isOpen = false;
-        isAnimating = false;
-        isClosing = false;
-        cancelRunningAnimations();
-        resetClosedStyles();
-        if (restoreFocus) iconFrame.focus({ preventScroll: true });
-        return;
-      }
-      if (isAnimating) return;
-      const runId = ++animationRunId;
-      isAnimating = true;
-      isClosing = true;
-      setClosedA11y();
-      menuLanguagePanel.style.pointerEvents = 'none';
-      await Promise.all([
-        animateElement(menuSeparators, [{ opacity: 1 }, { opacity: 0 }], {
-          duration: getReducedMotion() ? 1 : 160,
-          easing: 'ease-in',
-        }),
-        animateElement(
-          menuItems,
-          [
-            { opacity: 1, transform: 'translateY(0)' },
-            { opacity: 0, transform: 'translateY(18px)' },
-          ],
-          {
-            duration: getReducedMotion() ? 1 : 180,
-            easing: 'ease-in',
-          },
-        ),
-        animateElement(
-          menuLanguagePanel,
-          [
-            { opacity: 1, transform: 'translate(-50%, 0)' },
-            { opacity: 0, transform: 'translate(-50%, 10px)' },
-          ],
-          {
-            duration: getReducedMotion() ? 1 : 180,
-            easing: 'ease-in',
-          },
-        ),
-      ]);
-      if (runId !== animationRunId) return;
-      await Promise.all([
-        animateElement(menuFill, [{ opacity: 1 }, { opacity: 0 }], {
-          duration: getReducedMotion() ? 1 : 190,
-          easing: 'ease-in',
-        }),
-        animateElement(textureFill, [{ opacity: 1 }, { opacity: 0 }], {
-          duration: getReducedMotion() ? 1 : 190,
-          easing: 'ease-in',
-        }),
-        erasePath(topStitch, stitchLength, 200, 'ease-in'),
-      ]);
-      if (runId !== animationRunId) return;
-      await erasePath(menuOutline, outlineLength, 540, 'cubic-bezier(.55,0,1,.45)');
-      if (runId !== animationRunId) return;
-      await erasePath(leadingThread, leadingLength, 240, 'ease-in');
-      if (runId !== animationRunId) return;
-      await animateElement(
-        stage,
-        [
-          { opacity: 1, transform: 'scaleY(1)' },
-          { opacity: 0, transform: 'scaleY(0)' },
-        ],
-        {
-          duration: getReducedMotion() ? 1 : 190,
-          easing: 'ease-in',
-        },
-      );
-      if (runId !== animationRunId) return;
-      stage.style.visibility = 'hidden';
-      await rotateSpool(0, 360);
-      if (runId !== animationRunId) return;
-      isOpen = false;
-      isAnimating = false;
-      isClosing = false;
-      if (restoreFocus) iconFrame.focus({ preventScroll: true });
+    const onLeave = (): void => {
+      if (state === 'closed') rotate(0, 0.45);
     };
-
-    const updateTriggerContrast = (): void => {
-      contrastFrame = 0;
-      const bounds = iconFrame.getBoundingClientRect();
-      const centerX = bounds.left + bounds.width / 2;
-      const centerY = bounds.top + bounds.height / 2;
-      const overDarkHero = document
-        .elementsFromPoint(centerX, centerY)
-        .some(
-          (element) => !navBlock.contains(element) && Boolean(element.closest('.hero, .page-hero')),
-        );
-      navBlock.dataset.onDark = String(overDarkHero);
+    const onOutside = (event: MouseEvent): void => {
+      if (!root.contains(event.target as Node)) close();
     };
-    const scheduleTriggerContrast = (): void => {
-      if (contrastFrame) return;
-      contrastFrame = window.requestAnimationFrame(updateTriggerContrast);
-    };
-    const setLightboxBlocked = (blocked: boolean): void => {
-      if (blocked) {
-        navBlock.dataset.lightboxBlocked = 'true';
-        iconFrame.disabled = true;
-        void closeMenu(false, true);
-        return;
-      }
-      delete navBlock.dataset.lightboxBlocked;
-      iconFrame.disabled = false;
-      scheduleTriggerContrast();
-    };
-    const onLightboxState = (event: Event): void => {
-      const detail = (event as CustomEvent<{ open?: boolean }>).detail;
-      setLightboxBlocked(Boolean(detail?.open));
-    };
-
-    const onMouseEnter = (): void => {
-      if (!isOpen && !isAnimating) void rotateSpool(90, 600);
-    };
-    const onMouseLeave = (): void => {
-      if (!isOpen && !isAnimating) void rotateSpool(0, 450);
-    };
-    const onTriggerClick = (): void => {
-      if (!isOpen) {
-        void openMenu();
-        return;
-      }
-      if (isClosing) {
-        void closeMenu(false, true).then(openMenu);
-        return;
-      }
-      void closeMenu(false, isAnimating);
-    };
-    const onDocumentClick = (event: MouseEvent): void => {
-      if (!isOpen || navBlock.contains(event.target as Node)) return;
-      void closeMenu(false, isAnimating);
-    };
-    const onKeydown = (event: KeyboardEvent): void => {
-      if (!isOpen) return;
+    const onKey = (event: KeyboardEvent): void => {
+      if (state !== 'opening' && state !== 'open') return;
       if (event.key === 'Escape') {
         event.preventDefault();
-        void closeMenu(true, isAnimating);
+        close(true);
         return;
       }
-
       if (event.key !== 'Tab') return;
-      const focusableElements = getFocusableElements();
-      if (!focusableElements.length) {
+      const focusable = [
+        trigger,
+        ...Array.from(stage.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')),
+      ];
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
-        iconFrame.focus({ preventScroll: true });
-        return;
-      }
-
-      const firstFocusable = focusableElements[0];
-      const lastFocusable = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && activeElement === firstFocusable) {
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault();
-        lastFocusable?.focus({ preventScroll: true });
-      } else if (!event.shiftKey && activeElement === lastFocusable) {
+        first?.focus();
+      } else if (!root.contains(document.activeElement)) {
         event.preventDefault();
-        firstFocusable?.focus({ preventScroll: true });
-      } else if (!activeElement || !elements.root.contains(activeElement)) {
-        event.preventDefault();
-        firstFocusable?.focus({ preventScroll: true });
+        first?.focus();
       }
     };
-    const onLinkClick = (): void => {
-      void closeMenu(false, true);
+    const onLink = (): void => close(false, true);
+    const contrast = (): void => {
+      if (disposed) return;
+      const bounds = trigger.getBoundingClientRect();
+      const x = bounds.left + bounds.width / 2;
+      const y = bounds.top + bounds.height / 2;
+      // Compare the spool's actual center with hero geometry, not hit testing:
+      // the open panel and other overlays must not change the backdrop color.
+      root.dataset.onDark = String(
+        heroes.some((hero) => {
+          const heroBounds = hero.getBoundingClientRect();
+          return x >= heroBounds.left && x < heroBounds.right &&
+            y >= heroBounds.top && y < heroBounds.bottom;
+        }),
+      );
     };
-
-    resetClosedStyles();
-    updateTriggerContrast();
-    setLightboxBlocked(document.documentElement.dataset.lightboxOpen === 'true');
-    iconFrame.addEventListener('mouseenter', onMouseEnter);
-    iconFrame.addEventListener('mouseleave', onMouseLeave);
-    iconFrame.addEventListener('focus', onMouseEnter);
-    iconFrame.addEventListener('blur', onMouseLeave);
-    iconFrame.addEventListener('click', onTriggerClick);
-    document.addEventListener('click', onDocumentClick);
-    document.addEventListener('keydown', onKeydown);
-    document.addEventListener('site:lightbox-state', onLightboxState);
-    window.addEventListener('scroll', scheduleTriggerContrast, { passive: true });
-    window.addEventListener('resize', scheduleTriggerContrast);
-    links.forEach((link) => link.addEventListener('click', onLinkClick));
-
+    const contrastObserver = new ResizeObserver(contrast);
+    heroes.forEach((hero) => contrastObserver.observe(hero));
+    contrastObserver.observe(trigger);
+    const blockLightbox = (blocked: boolean): void => {
+      root.dataset.lightboxBlocked = String(blocked);
+      trigger.disabled = blocked;
+      if (blocked) close(false, true);
+    };
+    const onLightbox = (event: Event): void =>
+      blockLightbox(Boolean((event as CustomEvent<{ open: boolean }>).detail?.open));
+    const lightboxObserver = new MutationObserver(() =>
+      blockLightbox(document.documentElement.dataset.lightboxOpen === 'true'),
+    );
+    lightboxObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-lightbox-open'],
+    });
+    const onMotionChange = (): void => {
+      animation?.progress(1);
+      rotation?.progress(1);
+    };
+    setState('closed');
+    setA11y(false);
+    updateGeometry();
+    context.add(() => gsap.set(thread, { strokeDasharray: 1, strokeDashoffset: 1 }));
+    contrast();
+    blockLightbox(document.documentElement.dataset.lightboxOpen === 'true');
+    trigger.addEventListener('click', onClick);
+    trigger.addEventListener('mouseenter', onEnter);
+    trigger.addEventListener('mouseleave', onLeave);
+    trigger.addEventListener('focus', onEnter);
+    trigger.addEventListener('blur', onLeave);
+    document.addEventListener('click', onOutside);
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('site:lightbox-state', onLightbox);
+    window.addEventListener('scroll', contrast, { passive: true });
+    window.addEventListener('resize', contrast);
+    reduced.addEventListener('change', onMotionChange);
+    links.forEach((link) => link.addEventListener('click', onLink));
     return () => {
-      iconFrame.removeEventListener('mouseenter', onMouseEnter);
-      iconFrame.removeEventListener('mouseleave', onMouseLeave);
-      iconFrame.removeEventListener('focus', onMouseEnter);
-      iconFrame.removeEventListener('blur', onMouseLeave);
-      iconFrame.removeEventListener('click', onTriggerClick);
-      document.removeEventListener('click', onDocumentClick);
-      document.removeEventListener('keydown', onKeydown);
-      document.removeEventListener('site:lightbox-state', onLightboxState);
-      window.removeEventListener('scroll', scheduleTriggerContrast);
-      window.removeEventListener('resize', scheduleTriggerContrast);
-      window.cancelAnimationFrame(contrastFrame);
-      links.forEach((link) => link.removeEventListener('click', onLinkClick));
-      void closeMenu(false, true);
-      cancelRunningAnimations();
-      animationContext.revert();
-      navBlock.dataset.bound = 'false';
+      disposed = true;
+      generation++;
+      animation?.kill();
+      rotation?.kill();
+      context.revert();
+      lightboxObserver.disconnect();
+      contrastObserver.disconnect();
+      geometryObserver.disconnect();
+      trigger.removeEventListener('click', onClick);
+      trigger.removeEventListener('mouseenter', onEnter);
+      trigger.removeEventListener('mouseleave', onLeave);
+      trigger.removeEventListener('focus', onEnter);
+      trigger.removeEventListener('blur', onLeave);
+      document.removeEventListener('click', onOutside);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('site:lightbox-state', onLightbox);
+      window.removeEventListener('scroll', contrast);
+      window.removeEventListener('resize', contrast);
+      reduced.removeEventListener('change', onMotionChange);
+      links.forEach((link) => link.removeEventListener('click', onLink));
     };
   }
-
-  function bindThreadMenus(): void {
+  document.addEventListener('astro:page-load', () => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
     document
       .querySelectorAll<HTMLElement>('[data-thread-menu]')
-      .forEach((navBlock) => menuCleanups.push(initThreadMenu(navBlock)));
-  }
-
-  document.addEventListener('astro:page-load', bindThreadMenus);
-  document.addEventListener('astro:before-swap', () => {
-    while (menuCleanups.length) menuCleanups.pop()?.();
+      .forEach((root) => cleanups.push(initMenu(root)));
   });
+  document.addEventListener('astro:before-swap', () =>
+    cleanups.splice(0).forEach((cleanup) => cleanup()),
+  );
 </script>

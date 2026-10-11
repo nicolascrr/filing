@@ -5,46 +5,28 @@
  * Composes the Création page:
  *   1. Headerless image hero with centered uppercase page name (full-width)
  *   2. Intro — 3 centered paragraphs (bold segments parsed from i18n)
- *   3. GridGallery — irregular mosaic of 6 placeholder images, `fade` reveal
+ *   3. AtelierPresentation — eight supplied photographs in editorial diptychs
  *   4. Facts — 2 ValueBlocks horizontally (stacks on mobile)
  *
  * Footer comes automatically from BaseLayout — not re-added here.
  *
- * All visible text comes from i18n `t()`. All images are imported from
- * `src/assets/placeholders/`. `--content-max` is respected on every
+ * All visible text comes from i18n `t()`. Dedicated media copies are used.
+ * `--content-max` is respected on every
  * section except the hero. Vertical rhythm uses `--space-section`.
  */
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { parseBold } from '../i18n/t';
 import Hero from '../components/sections/PageHero.astro';
-import GridGallery, { type GalleryImage } from '../components/ui/GridGallery.astro';
+import AtelierPresentation from '../components/ui/AtelierPresentation.astro';
+import { creationMedia } from '../data/presentationMedia';
 import ValueBlock from '../components/ui/ValueBlock.astro';
-import heroImg from '../content/Médias/Showroom/Broderie/Multi-techniques/P1001324.JPG';
-// ValueBlock logos — real pictos from src/content/Pictos/ (V2-01).
-// "développement" → developpement.png ; colours has no approved orange
-// reference yet, so use the requested temporary made-in-France asset.
-import iconDev from '../content/Pictos/developpement.png';
-import iconCouleurs from '../content/Pictos/made_in_france.png';
-import gallery11 from '../content/Médias/Showroom/Broderie/Multi-techniques/DSC_0076.JPG';
-import gallery43 from '../content/Médias/Showroom/Broderie/Multi-techniques/DSC_0108.JPG';
-import gallery32 from '../content/Médias/Showroom/Broderie/Multi-techniques/DSC_0422.JPG';
-import gallery169 from '../content/Médias/Showroom/Broderie/Multi-techniques/DSC_0654.JPG';
-import gallery23 from '../content/Médias/Showroom/Broderie/Multi-techniques/DSC_0658.JPG';
-import gallery34 from '../content/Médias/Showroom/Broderie/Multi-techniques/IMG_7009.JPG';
+import heroImg from '../assets/photos/hero/creation-lead.jpg';
+// ValueBlock logos — original supplied SVG pictos.
+import iconDev from '../assets/icons/developpement.svg';
+import iconCouleurs from '../assets/icons/bobine_fils.svg';
 
 const t = Astro.locals.t;
-
-// Gallery images — varied aspect ratios + data-driven spans for an
-// irregular mosaic. Alt descriptions are localized with the page.
-const galleryImages: GalleryImage[] = [
-  { src: gallery11, alt: t('creation.gallery.alt1'), colSpan: 2, rowSpan: 2 },
-  { src: gallery43, alt: t('creation.gallery.alt2'), colSpan: 2, rowSpan: 1 },
-  { src: gallery32, alt: t('creation.gallery.alt3'), colSpan: 2, rowSpan: 1 },
-  { src: gallery169, alt: t('creation.gallery.alt4'), colSpan: 2, rowSpan: 1 },
-  { src: gallery23, alt: t('creation.gallery.alt5'), colSpan: 1, rowSpan: 2 },
-  { src: gallery34, alt: t('creation.gallery.alt6'), colSpan: 1, rowSpan: 2 },
-];
 ---
 
 <BaseLayout title={`${t('creation.hero.title')} — ${t('common.brand.name')}`}>
@@ -53,27 +35,38 @@ const galleryImages: GalleryImage[] = [
 
   <!-- 2. Intro — 3 centered paragraphs with bold segments -->
   <section class="content-max section-intro" aria-label={t('common.sectionLabels.intro')}>
-    <div class="section-intro__inner" data-reveal>
-      <p class="section-intro__p" set:html={parseBold(t('creation.intro.p1'))} />
-      <p class="section-intro__p" set:html={parseBold(t('creation.intro.p2'))} />
-      <p class="section-intro__p" set:html={parseBold(t('creation.intro.p3'))} />
+    <div class="section-intro__inner" data-reveal-group data-reveal-start="top 80%">
+      <p
+        class="section-intro__p"
+        data-reveal-description
+        set:html={parseBold(t('creation.intro.p1'))}
+      />
+      <p
+        class="section-intro__p"
+        data-reveal-description
+        set:html={parseBold(t('creation.intro.p2'))}
+      />
+      <p
+        class="section-intro__p"
+        data-reveal-description
+        set:html={parseBold(t('creation.intro.p3'))}
+      />
     </div>
   </section>
 
-  <!-- 3. GridGallery — wide irregular mosaic, fade reveal -->
+  <!-- 3. Noninteractive editorial presentation -->
   <section
     class="section-gallery section-gallery--wide"
     aria-label={t('common.sectionLabels.gallery')}
-    data-reveal
   >
-    <GridGallery images={galleryImages} animation="fade" />
+    <AtelierPresentation images={creationMedia} />
   </section>
 
   <!-- 4. Facts — 2 ValueBlocks horizontally (stacks on mobile) -->
   <section class="content-max section-facts" aria-label={t('common.sectionLabels.facts')}>
     <h2 class="sr-only">{t('common.sectionLabels.facts')}</h2>
     <div class="section-facts__grid">
-      <div data-reveal data-reveal-delay="0">
+      <div>
         <ValueBlock
           logo={iconDev}
           logoVariant="orange"
@@ -81,7 +74,7 @@ const galleryImages: GalleryImage[] = [
           description={t('creation.facts.dev.description')}
         />
       </div>
-      <div data-reveal data-reveal-delay="0.12">
+      <div>
         <ValueBlock
           logo={iconCouleurs}
           logoVariant="orange"

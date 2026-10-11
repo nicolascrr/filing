@@ -1,4 +1,37 @@
 {
+  "ui": {
+    "gallery": {
+      "overviewHeading": "Una panoramica dei nostri ricami",
+      "allCategories": "Tutte le categorie",
+      "reset": "Reimposta i filtri",
+      "category": "Categoria",
+      "type": "Tipo",
+      "sample": "Campione",
+      "sampleCount": "Campioni: {count}",
+      "imageCount": "Immagini: {count}",
+      "viewCategory": "Vedi la categoria {category}",
+      "emptyCoiling": "Al momento non sono disponibili campioni Coiling."
+    },
+    "photo": {
+      "zoomIn": "Ingrandisci",
+      "zoomOut": "Riduci",
+      "reset": "Reimposta lo zoom",
+      "previousSample": "Campione precedente",
+      "nextSample": "Campione successivo",
+      "loading": "Caricamento dell’immagine…",
+      "error": "Impossibile caricare l’immagine.",
+      "retry": "Riprova"
+    },
+    "timeline": {
+      "range": "Scorri le tappe della nostra storia",
+      "previous": "Tappa precedente",
+      "next": "Tappa successiva"
+    },
+    "language": {
+      "pending": "Cambio di lingua in corso…",
+      "switchProgress": "{source} → {destination} · Cambio di lingua…"
+    }
+  },
   "accueil": {
     "hero": {
       "tagline": "RICAMO DI LUSSO DAL 1997"

@@ -1,530 +1,141 @@
 ---
-/**
- * Galerie page — US-18
- *
- * Composes the Galerie page:
- *   1. Page hero (image, headerless) — full-width, breaks `--content-max`.
- *   2. Category selector — 17 category titles in a creative freeform layout
- *      (scattered, varying sizes/rotations). All visible without scrolling.
- *      On click: GSAP Flip brings the chosen title to the front of a compact
- *      row at the top and the BigCarousel for that category appears below.
- *   3. BigCarousel (one per category, only the active one shown).
- *
- * Category switching is CLIENT-SIDE state (no URL change, no routes):
- *   - All 17 BigCarousels are rendered server-side; only the active one is
- *     shown (the others are `hidden`). This avoids re-instantiating the
- *     carousel and is the simplest reliable approach (per US-18 guidance).
- *   - A small vanilla `<script>` (inline, re-bound on `astro:page-load`)
- *     handles category clicks, performs the freeform→compact Flip reorder,
- *     and reveals the matching carousel.
- *
- * Accessibility:
- *   - Categories are real `<button>`s (keyboard reachable, min 44x44px
- *     effective target via padding).
- *   - `aria-pressed` reflects selected state; `aria-current="true"` on the
- *     active category.
- *   - An `aria-live` region announces the selected category.
- *   - Esc resets to freeform (nice-to-have).
- *
- * Responsive (mobile-first):
- *   - Mobile: freeform reflows as a wrapped flex row with varying font sizes
- *     + rotations (no absolute positioning) so all 17 stay visible without
- *     horizontal overflow.
- *   - md+: freeform becomes an absolute scatter within a bounded area.
- *   - Compact mode wraps on every breakpoint.
- *
- * All visible text comes from i18n `t()`. All images via Astro `<Image>`.
- * Footer is rendered by BaseLayout — not re-added here.
- */
-
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/sections/PageHero.astro';
 import BigCarousel from '../components/ui/BigCarousel.astro';
-import { galleryCategories } from '../data/galleryCategories';
-
-import pageHeroGalerie from '../content/Médias/Showroom/Broderie/Traditionnelle/P1000499.JPG';
+import SmallCarousel from '../components/ui/SmallCarousel.astro';
+import CatalogueMasonry from '../components/ui/CatalogueMasonry.astro';
+import { galleryManifest } from '../server/galleryCatalogue';
+import pageHeroGalerie from '../assets/photos/hero/showroom-lead.jpg';
 
 const t = Astro.locals.t;
-
-const selectorLabel = t('galerie.selector.label');
-const selectedHint = t('galerie.selector.selectedHint');
-
-/**
- * Freeform scatter positions for the 17 categories (md+ only).
- * Each entry: { top, left, size, rot } — percentages for top/left,
- * size is a font-size multiplier, rot is rotation in degrees.
- * Anchored by center (translate -50% -50%). Kept within 12–88% to avoid
- * edge overflow.
- */
-interface ScatterPos {
-  top: number;
-  left: number;
-  size: number;
-  rot: number;
-}
-
-const scatter: ScatterPos[] = [
-  { top: 14, left: 16, size: 1.08, rot: -3.5 },
-  { top: 12, left: 74, size: 0.98, rot: 2.5 },
-  { top: 24, left: 45, size: 1.18, rot: -1.8 },
-  { top: 32, left: 22, size: 0.96, rot: 2.8 },
-  { top: 34, left: 68, size: 1.05, rot: -2.6 },
-  { top: 45, left: 38, size: 1.02, rot: 1.8 },
-  { top: 52, left: 14, size: 1.12, rot: -2.2 },
-  { top: 55, left: 56, size: 0.99, rot: 3.2 },
-  { top: 60, left: 82, size: 0.94, rot: -1.6 },
-  { top: 70, left: 30, size: 1.06, rot: 2.4 },
-  { top: 76, left: 63, size: 1.0, rot: -2.8 },
-  { top: 84, left: 18, size: 0.96, rot: 1.7 },
-  { top: 18, left: 31, size: 0.93, rot: 2.7 },
-  { top: 24, left: 60, size: 1.05, rot: -2 },
-  { top: 41, left: 84, size: 0.96, rot: 2.9 },
-  { top: 48, left: 47, size: 1.08, rot: -1.5 },
-  { top: 66, left: 9, size: 0.97, rot: 2.1 },
-];
-
-const categories = galleryCategories.map((cat, i) => ({
-  ...cat,
-  label: t(cat.labelKey),
-  images: cat.images.map((image) => ({
-    src: image.src,
-    alt: t(image.altKey)
-      .replace('{category}', t(cat.labelKey))
-      .replace('{number}', String(image.number)),
-  })),
-  pos: scatter[i] ?? { top: 50, left: 50, size: 1, rot: 0 },
-}));
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const manifest = await galleryManifest(Astro.url.searchParams, Astro.locals.locale, t);
+const strings = {
+  overviewHeading: t('ui.gallery.overviewHeading'),
+  reset: t('ui.gallery.reset'),
+  emptyCoiling: t('ui.gallery.emptyCoiling'),
+  sampleCount: t('ui.gallery.sampleCount'),
+  imageCount: t('ui.gallery.imageCount'),
+  viewCategory: t('ui.gallery.viewCategory'),
+  zoomIn: t('ui.photo.zoomIn'),
+  zoomOut: t('ui.photo.zoomOut'),
+  resetZoom: t('ui.photo.reset'),
+  previousSample: t('ui.photo.previousSample'),
+  nextSample: t('ui.photo.nextSample'),
+  loading: t('ui.photo.loading'),
+  error: t('ui.photo.error'),
+  retry: t('ui.photo.retry'),
+  close: t('common.gallery.closeLabel'),
+  prev: t('common.bigcarousel.prevLabel'),
+  next: t('common.bigcarousel.nextLabel'),
+  type: t('ui.gallery.type'),
+  sample: t('ui.gallery.sample'),
+};
+const json = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
+const masonry = manifest.mode === 'overview' || manifest.cards.length >= 11;
+const category = manifest.categories.find((c) => c.key === manifest.category);
 ---
 
 <BaseLayout title={`${t('galerie.hero.title')} — ${t('common.brand.name')}`}>
-  <!-- 1. Page hero (image, headerless) — full-width -->
   <Hero image={pageHeroGalerie} title={t('galerie.hero.title')} />
-
-  <!-- 2 + 3. Category selector + BigCarousel -->
   <section
-    class="content-max galerie-section"
-    aria-label={selectorLabel}
-    data-galerie-page
-    data-reveal
+    class="content-max catalogue"
+    data-gallery-root
+    data-reveal-group
+    data-reveal-start="top 80%"
+    aria-label={t('galerie.selector.label')}
   >
-    <!-- Live region announcing the selected category. -->
-    <p class="sr-only" aria-live="polite" data-galerie-live></p>
-
-    <!-- Category selector (freeform → compact) -->
-    <div class="galerie-categories" data-galerie-categories role="group" aria-label={selectorLabel}>
+    <nav class="catalogue-nav" aria-label={t('galerie.selector.label')}>
+      <button type="button" data-gallery-reset aria-pressed={!category}
+        >{t('ui.gallery.allCategories')}</button
+      >
       {
-        categories.map((cat) => (
+        manifest.categories.map((c) => (
           <button
             type="button"
-            class="galerie-categories__btn"
-            data-galerie-category
-            data-category={cat.key}
-            aria-pressed="false"
-            style={`--top: ${cat.pos.top}%; --left: ${cat.pos.left}%; --size: ${cat.pos.size}; --rot: ${cat.pos.rot}deg;`}
+            data-gallery-category={c.key}
+            aria-pressed={category?.key === c.key}
           >
-            <span class="galerie-categories__label">{cat.label}</span>
+            {c.label}
+            <span>{c.typeCount}</span>
           </button>
         ))
       }
-    </div>
-
-    <!-- BigCarousels — one per category, only the active one shown -->
-    <div class="galerie-carousels" data-galerie-carousels>
-      {
-        categories.map((cat) => (
-          <div class="galerie-carousels__item" data-galerie-carousel data-category={cat.key} hidden>
-            <h2 class="sr-only">{cat.label}</h2>
-            <BigCarousel images={cat.images} />
-          </div>
-        ))
-      }
-    </div>
-
-    <!-- Hint shown only when a category is selected (visually-hidden label
-         is enough; this is an extra visible cue kept minimal). -->
-    <span class="sr-only" data-galerie-selected-hint>
-      {selectedHint}
-    </span>
+    </nav>
+    <header class="catalogue-heading">
+      <h2 data-gallery-heading data-reveal-title>{category?.label ?? strings.overviewHeading}</h2>
+      <button type="button" data-gallery-reset>{strings.reset}</button>
+    </header>
+    <p data-gallery-status role="status" aria-live="polite">
+      {category?.typeCount === 0 ? strings.emptyCoiling : ''}
+    </p>
+    <button type="button" data-gallery-retry hidden>{strings.retry}</button>
+    <CatalogueMasonry cards={masonry ? manifest.cards : []} hidden={!masonry} />
+    <SmallCarousel cards={!masonry ? manifest.cards : []} hidden={masonry} />
+    <BigCarousel strings={strings} />
+    <script is:inline type="application/json" data-gallery-manifest set:html={json(manifest)} />
+    <script is:inline type="application/json" data-gallery-strings set:html={json(strings)} />
   </section>
 </BaseLayout>
 
 <style>
-  .galerie-section {
-    /* The gallery deliberately exceeds the standard content measure while
-       retaining the same safe mobile inset as .content-max. */
+  .catalogue {
     max-width: 1800px;
-    padding-inline: clamp(1.5rem, 2vw, 2rem);
     padding-block: var(--space-section);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-component);
   }
-
-  /* ---- Category selector ---- */
-  .galerie-categories {
-    position: relative;
-    width: 100%;
-  }
-
-  /* Freeform — mobile (base): wrapped flex with varying sizes/rotations.
-     No absolute positioning so all 17 stay visible without overflow. */
-  .galerie-categories:not([data-selected]) {
+  .catalogue-nav {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: baseline;
-    gap: 0.45rem 0.8rem;
-    padding-block: 1rem;
-    min-height: 320px;
-    border-block: 1px solid color-mix(in srgb, var(--color-gold) 14%, transparent);
-    background:
-      radial-gradient(circle at 18% 28%, rgba(244, 132, 8, 0.06), transparent 18rem),
-      radial-gradient(
-        circle at 78% 64%,
-        color-mix(in srgb, var(--color-gold) 7%, transparent),
-        transparent 20rem
-      );
+    gap: 0.25rem 0.8rem;
+    padding-block: 1.5rem;
+    border-block: 1px solid color-mix(in srgb, var(--color-charcoal) 18%, transparent);
   }
-
-  /* Freeform — md+: absolute scatter within a bounded area. */
-  @media (min-width: 768px) {
-    .galerie-categories:not([data-selected]) {
-      display: block;
-      height: clamp(390px, 58vh, 620px);
-      padding-block: 0;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .galerie-categories:not([data-selected]) {
-      height: clamp(420px, 60vh, 650px);
-    }
-  }
-
-  /* Compact (a category is selected): tidy wrapped row at the top. */
-  .galerie-categories[data-selected] {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 0.4rem 0.75rem;
-    padding-block: 0.5rem;
-  }
-
-  /* ---- Category buttons ---- */
-  .galerie-categories__btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  .catalogue button {
     min-height: 44px;
-    min-width: 44px;
-    padding: 0.5rem 0.9rem;
-    border: none;
-    background: transparent;
-    color: var(--color-charcoal);
-    font-family: var(--font-heading);
-    font-weight: 500;
-    font-size: clamp(1rem, 1.4vw, 1.25rem);
-    letter-spacing: 0.04em;
-    line-height: 1.2;
+    padding: 0.6rem 0.8rem;
     cursor: pointer;
-    transition:
-      color var(--duration-base) var(--ease-luxury),
-      opacity var(--duration-base) var(--ease-luxury);
   }
-
-  /* Freeform — md+: absolute positioning + rotation. */
-  @media (min-width: 768px) {
-    .galerie-categories:not([data-selected]) .galerie-categories__btn {
-      position: absolute;
-      top: var(--top, 50%);
-      left: var(--left, 50%);
-      transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
-      white-space: nowrap;
-    }
+  .catalogue-nav button {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--color-charcoal);
   }
-
-  /* Hover / focus — muted gold accent (AA-compliant text variant). */
-  .galerie-categories__btn:hover,
-  .galerie-categories__btn:focus-visible {
-    color: var(--color-gold-text);
-  }
-  .galerie-categories__btn:focus-visible {
-    outline: 2px solid var(--color-gold);
-    outline-offset: 3px;
-    border-radius: var(--radius-sm);
-  }
-
-  /* In freeform (mobile), apply rotation via the label span so the button
-     keeps a clean tap target. */
-  .galerie-categories:not([data-selected]) .galerie-categories__label {
-    display: inline-block;
-    transform: rotate(var(--rot, 0deg));
-  }
-  /* md+ rotation is applied on the button itself (above); reset span. */
-  @media (min-width: 768px) {
-    .galerie-categories:not([data-selected]) .galerie-categories__label {
-      transform: none;
-    }
-  }
-
-  /* Selected (active) category — gold accent + underline. */
-  .galerie-categories__btn[aria-pressed='true'] {
-    color: var(--color-gold-text);
-    font-weight: 500;
-  }
-  .galerie-categories__btn[aria-pressed='true'] .galerie-categories__label {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    text-decoration-color: var(--color-gold-text);
-  }
-  /* In compact mode, dim non-selected categories for hierarchy. */
-  .galerie-categories[data-selected] .galerie-categories__btn:not([aria-pressed='true']) {
+  .catalogue-nav button span {
+    font-size: 0.7rem;
     opacity: 0.55;
   }
-  .galerie-categories[data-selected] .galerie-categories__btn:not([aria-pressed='true']):hover,
-  .galerie-categories[data-selected]
-    .galerie-categories__btn:not([aria-pressed='true']):focus-visible {
-    opacity: 1;
+  .catalogue-nav button[aria-pressed='true'] {
+    color: var(--color-gold-text);
+    box-shadow: inset 0 -1px var(--color-gold);
   }
-
-  /* ---- Carousels ---- */
-  .galerie-carousels {
-    position: relative;
-    min-height: var(--galerie-carousel-reserved-height, 0px);
+  .catalogue-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-block: 3rem 1rem;
   }
-
-  .galerie-carousels__item {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  .galerie-carousels__item[data-active='true'] {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  /* Hidden items are removed from layout. */
-  .galerie-carousels__item[hidden] {
-    display: none;
-  }
-
-  .galerie-carousels__title {
-    margin: 0 0 1.25rem 0;
+  .catalogue-heading h2 {
     font-family: var(--font-heading);
-    font-weight: 500;
     font-size: var(--text-2xl);
-    color: var(--color-charcoal);
-    text-align: center;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
     text-wrap: balance;
   }
-
-  /* ---- Reduced motion ---- */
-  @media (prefers-reduced-motion: reduce) {
-    .galerie-categories__btn,
-    .galerie-carousels__item {
-      transition: none;
-    }
-    .galerie-carousels__item {
-      transform: none;
-    }
+  .catalogue-heading button {
+    background: none;
+    border: 1px solid color-mix(in srgb, var(--color-charcoal) 20%, transparent);
+  }
+  [data-gallery-status]:empty {
+    display: none;
+  }
+  [data-gallery-status] {
+    padding-block: 1rem;
   }
 </style>
-
 <script>
-  /**
-   * Galerie island — vanilla TS + GSAP Flip. It is deliberately scoped to
-   * this page so a ClientRouter swap cannot leave carousel/listener state on
-   * another route.
-   */
-  import { Flip, gsap } from '../scripts/gsap';
-
-  type Cleanup = () => void;
-
-  let cleanup: Cleanup | null = null;
-
-  function initGalerie(): void {
-    if (cleanup) cleanup();
-    cleanup = null;
-
-    const page = document.querySelector<HTMLElement>('[data-galerie-page]');
-    if (!page) return;
-
-    const categories = page.querySelector<HTMLElement>('[data-galerie-categories]');
-    const carouselsWrap = page.querySelector<HTMLElement>('[data-galerie-carousels]');
-    const live = page.querySelector<HTMLElement>('[data-galerie-live]');
-    const hint = page.querySelector<HTMLElement>('[data-galerie-selected-hint]');
-
-    if (!categories || !carouselsWrap) return;
-
-    const buttons = Array.from(
-      categories.querySelectorAll<HTMLButtonElement>('[data-galerie-category]'),
-    );
-    const carouselItems = Array.from(
-      carouselsWrap.querySelectorAll<HTMLElement>('[data-galerie-carousel]'),
-    );
-
-    const originalOrder = new Map(buttons.map((button, index) => [button, index]));
-    const prefersReducedMotion = (): boolean =>
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const ctx = gsap.context(() => undefined, page);
-    let activeKey: string | null = null;
-    let activeFlip: gsap.core.Timeline | null = null;
-    let activeCarousel: gsap.core.Tween | null = null;
-    let hasCompacted = false;
-
-    /** Restore the source category order before returning to freeform. */
-    const restoreOriginalOrder = (): void => {
-      [...buttons]
-        .sort((a, b) => (originalOrder.get(a) ?? 0) - (originalOrder.get(b) ?? 0))
-        .forEach((button) => categories.append(button));
-    };
-
-    const setButtonState = (key: string | null): void => {
-      buttons.forEach((button) => {
-        const selected = button.dataset.category === key;
-        button.setAttribute('aria-pressed', String(selected));
-        if (selected) button.setAttribute('aria-current', 'true');
-        else button.removeAttribute('aria-current');
-      });
-    };
-
-    /** Keep the chosen carousel in flow but visually absent during the first Flip. */
-    const prepareCarousel = (key: string | null): HTMLElement | null => {
-      activeCarousel?.kill();
-      activeCarousel = null;
-      gsap.killTweensOf(carouselItems);
-
-      const activeItem = carouselItems.find((item) => item.dataset.category === key) ?? null;
-      carouselItems.forEach((item) => {
-        const isActive = item === activeItem;
-        item.dataset.active = isActive ? 'true' : 'false';
-        item.hidden = !isActive;
-        if (!isActive) gsap.set(item, { clearProps: 'all' });
-      });
-      if (activeItem) {
-        gsap.set(activeItem, { autoAlpha: 0, y: 32 });
-        const reservedHeight = Math.ceil(activeItem.getBoundingClientRect().height);
-        carouselsWrap.style.setProperty(
-          '--galerie-carousel-reserved-height',
-          `${reservedHeight}px`,
-        );
-      } else {
-        carouselsWrap.style.removeProperty('--galerie-carousel-reserved-height');
-      }
-      return activeItem;
-    };
-
-    const revealCurrentCarousel = (): void => {
-      const activeItem = carouselItems.find((item) => item.dataset.category === activeKey);
-      if (!activeItem || activeItem.hidden) return;
-      if (prefersReducedMotion()) {
-        gsap.set(activeItem, { autoAlpha: 1, y: 0, clearProps: 'opacity,transform,visibility' });
-        return;
-      }
-
-      ctx.add(() => {
-        activeCarousel = gsap.to(activeItem, {
-          autoAlpha: 1,
-          y: 0,
-          duration: 1,
-          ease: 'power3.out',
-          clearProps: 'opacity,transform,visibility',
-        });
-      });
-    };
-
-    /** Select a category (or reset to freeform if `key` is null). */
-    const select = (key: string | null): void => {
-      if (key === null) {
-        activeFlip?.kill();
-        activeFlip = null;
-        categories.removeAttribute('data-selected');
-        restoreOriginalOrder();
-        setButtonState(null);
-        prepareCarousel(null);
-        activeKey = null;
-        if (live) live.textContent = '';
-        return;
-      }
-
-      activeKey = key;
-      prepareCarousel(key);
-
-      if (!hasCompacted) {
-        hasCompacted = true;
-        const state = Flip.getState([categories, ...buttons]);
-        categories.setAttribute('data-selected', '');
-        const selected = buttons.find((button) => button.dataset.category === key);
-        if (selected) categories.prepend(selected);
-        setButtonState(key);
-
-        if (prefersReducedMotion()) {
-          revealCurrentCarousel();
-        } else {
-          ctx.add(() => {
-            activeFlip = Flip.from(state, {
-              absolute: buttons,
-              duration: 1.15,
-              ease: 'power2.in',
-              stagger: { each: 0.035, from: 'start' },
-              nested: true,
-              onComplete: () => {
-                activeFlip = null;
-                revealCurrentCarousel();
-              },
-            });
-          });
-        }
-      } else {
-        setButtonState(key);
-        if (!activeFlip?.isActive()) revealCurrentCarousel();
-      }
-
-      // Announce the selected category label.
-      if (live) {
-        const btn = buttons.find((b) => b.dataset.category === key);
-        const label = btn?.textContent?.trim() ?? '';
-        live.textContent = hint?.textContent?.trim()
-          ? `${hint.textContent.trim()} — ${label}`
-          : label;
-      }
-    };
-
-    const onCategoryClick = (event: Event): void => {
-      const btn = event.currentTarget as HTMLButtonElement;
-      const key = btn.dataset.category;
-      if (!key) return;
-      select(key);
-    };
-
-    // Esc resets to freeform (nice-to-have).
-    const onKeydown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' && activeKey !== null) {
-        const prevKey = activeKey;
-        select(null);
-        // Return focus to the previously active button.
-        const prev = buttons.find((b) => b.dataset.category === prevKey);
-        prev?.focus();
-      }
-    };
-
-    buttons.forEach((btn) => btn.addEventListener('click', onCategoryClick));
-    document.addEventListener('keydown', onKeydown);
-
-    cleanup = () => {
-      activeFlip?.kill();
-      activeCarousel?.kill();
-      gsap.killTweensOf([...buttons, ...carouselItems]);
-      buttons.forEach((btn) => btn.removeEventListener('click', onCategoryClick));
-      document.removeEventListener('keydown', onKeydown);
-      ctx.revert();
-    };
-  }
-
-  document.addEventListener('astro:page-load', initGalerie);
-  document.addEventListener('astro:before-swap', () => {
-    if (cleanup) cleanup();
-    cleanup = null;
-  });
+  import '../scripts/galleryController';
 </script>

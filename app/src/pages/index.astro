@@ -25,15 +25,15 @@ import Timeline from '../components/ui/Timeline.astro';
 import ValueBlock from '../components/ui/ValueBlock.astro';
 import Teaser from '../components/ui/Teaser.astro';
 import { timelineMilestones } from '../data/timeline';
-import imageCardCreation from '../content/Médias/Showroom/Broderie/Macramé/P1001447.JPG';
-import imageCardProduction from '../content/Médias/Showroom/Broderie/Tuffetage/P1001195.JPG';
-import teaserImg from '../content/Médias/Showroom/Broderie/Patchwork/P1000715.JPG';
-// ValueBlock logos — real pictos from src/content/Pictos/ (V2-01).
-import iconFabrication from '../content/Pictos/made_in_france.png';
+import imageCardCreation from '../assets/photos/home/bouton-creation.jpg';
+import imageCardProduction from '../assets/photos/home/bouton-production.jpg';
+import teaserImg from '../assets/teaser.png';
+// ValueBlock logos — original supplied SVG pictos.
+import iconFabrication from '../assets/icons/made_in_france.svg';
 // No approved orange patrimoine picto exists yet; use the requested temporary
 // made-in-France reference so the illustrated grid remains visually coherent.
-import iconPatrimoine from '../content/Pictos/made_in_france.png';
-import iconValeurs from '../content/Pictos/valeurs.png';
+import iconPatrimoine from '../assets/icons/made_in_france.svg';
+import iconValeurs from '../assets/icons/valeurs.svg';
 
 const t = Astro.locals.t;
 ---
@@ -53,12 +53,14 @@ const t = Astro.locals.t;
         <p
           class="section-intro__p"
           data-reveal
+          data-reveal-start="top 80%"
           data-reveal-style="atelier-lines"
           set:html={parseBold(t('accueil.intro.p1'))}
         />
         <p
           class="section-intro__p"
           data-reveal
+          data-reveal-start="top 80%"
           data-reveal-style="atelier-lines"
           data-reveal-delay="0.18"
           set:html={parseBold(t('accueil.intro.p2'))}
@@ -69,18 +71,21 @@ const t = Astro.locals.t;
     <!-- 2. Services — 2 ImageCards (Création / Production) -->
     <section class="content-max section-services" aria-label={t('common.sectionLabels.services')}>
       <div class="section-services__grid">
-        <div data-reveal data-reveal-delay="0">
+        <div data-reveal data-reveal-start="top 80%" data-reveal-delay="0">
           <ImageCard
             title={t('accueil.services.creation')}
             image={imageCardCreation}
             href="/creation"
+            titleSize="var(--text-2xl)"
           />
         </div>
-        <div data-reveal data-reveal-delay="0.12">
+        <div data-reveal data-reveal-start="top 80%" data-reveal-delay="0.12">
           <ImageCard
             title={t('accueil.services.production')}
             image={imageCardProduction}
             href="/production"
+            objectPosition="center 25%"
+            titleSize="var(--text-2xl)"
           />
         </div>
       </div>
@@ -92,6 +97,7 @@ const t = Astro.locals.t;
         class="section-expertise__p"
         data-home-thread-terminal-content
         data-reveal
+        data-reveal-start="top 80%"
         data-reveal-style="embroidered-words"
         set:html={parseBold(t('accueil.expertise.p1'))}
       />
@@ -112,7 +118,7 @@ const t = Astro.locals.t;
   <section class="content-max section-values" aria-label={t('common.sectionLabels.values')}>
     <h2 class="sr-only">{t('common.sectionLabels.values')}</h2>
     <div class="section-values__grid">
-      <div data-reveal data-reveal-delay="0">
+      <div>
         <ValueBlock
           logo={iconFabrication}
           logoVariant="orange"
@@ -120,7 +126,7 @@ const t = Astro.locals.t;
           description={t('accueil.values.fabrication.description')}
         />
       </div>
-      <div data-reveal data-reveal-delay="0.1">
+      <div>
         <ValueBlock
           logo={iconPatrimoine}
           logoVariant="orange"
@@ -128,10 +134,12 @@ const t = Astro.locals.t;
           description={t('accueil.values.patrimoine.description')}
         />
       </div>
-      <div data-reveal data-reveal-delay="0.2">
+      <div>
         <ValueBlock
           logo={iconValeurs}
           logoVariant="orange"
+          logoScale={0.8}
+          offsetY={-14}
           title={t('accueil.values.valeurs.title')}
           description={t('accueil.values.valeurs.description')}
         />
@@ -144,8 +152,8 @@ const t = Astro.locals.t;
     title={t('accueil.teaser.title')}
     url="/galerie"
     image={teaserImg}
-    objectPosition="center 46%"
-    mobileObjectPosition="58% 42%"
+    objectPosition="center bottom"
+    mobileObjectPosition="center bottom"
   />
 </BaseLayout>
 
@@ -227,18 +235,21 @@ const t = Astro.locals.t;
   }
 
   /* ---- Values ---- */
+  .section-values {
+    padding-top: calc(var(--space-section) * 0.55);
+  }
   .section-values__grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-component);
   }
 
-  .section-values__grid > [data-reveal] {
+  .section-values__grid > div {
     display: flex;
     height: 100%;
   }
 
-  .section-values__grid > [data-reveal] :global(.value-block) {
+  .section-values__grid > div :global(.value-block) {
     width: 100%;
   }
 

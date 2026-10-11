@@ -34,6 +34,9 @@
   /* ---- Spacing ---- */
   --space-section: clamp(3.25rem, 6vw, 6rem); /* between sections */
   --space-component: clamp(1.5rem, 3vw, 3rem); /* between components */
+  --value-icon-size: clamp(6.5rem, 8vw, 7.5rem);
+  --value-gap: clamp(0.75rem, 1.5vw, 1rem);
+  --value-description-gap: 0.625rem;
   --content-max: 1600px; /* constrained content width — generously spread on large screens (V2-08) */
   --content-padding: clamp(
     1.5rem,

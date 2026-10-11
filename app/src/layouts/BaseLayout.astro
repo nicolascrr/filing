@@ -51,6 +51,7 @@ const siteDescription = description ?? t('common.meta.description');
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     <title>{siteTitle}</title>
     <meta name="description" content={siteDescription} />
@@ -83,7 +84,8 @@ const siteDescription = description ?? t('common.meta.description');
             typeof state.scrollX !== 'number' ||
             typeof state.scrollY !== 'number' ||
             typeof state.timestamp !== 'number' ||
-            Date.now() - state.timestamp > 5000
+            // Match languageSwitchState.ts, including slow reload fallbacks.
+            Date.now() - state.timestamp > 60000
           ) {
             window.sessionStorage.removeItem(key);
             return;
@@ -95,8 +97,14 @@ const siteDescription = description ?? t('common.meta.description');
           document.documentElement.dataset.languageViewportLocked = 'true';
           document.documentElement.dataset.languageScrollRestoring = 'true';
           document.documentElement.style.scrollBehavior = 'auto';
-          document.documentElement.style.setProperty('--language-lock-scroll-x', `${state.scrollX}px`);
-          document.documentElement.style.setProperty('--language-lock-scroll-y', `${state.scrollY}px`);
+          document.documentElement.style.setProperty(
+            '--language-lock-scroll-x',
+            `${state.scrollX}px`,
+          );
+          document.documentElement.style.setProperty(
+            '--language-lock-scroll-y',
+            `${state.scrollY}px`,
+          );
           document.body.dataset.languageViewportLocked = 'true';
           document.body.style.scrollBehavior = 'auto';
           document.body.style.position = 'fixed';

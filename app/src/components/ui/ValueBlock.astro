@@ -26,6 +26,10 @@ export interface Props {
   layout?: 'row' | 'grid-2x2';
   /** Opt-in treatment for the supplied orange client pictograms. */
   logoVariant?: 'default' | 'orange';
+  /** Optical compensation for an individual pictogram's visible footprint. */
+  logoScale?: number;
+  /** Optional vertical pictogram offset in pixels. */
+  offsetY?: number;
   /** Optional layout override class. */
   class?: string;
 }
@@ -36,6 +40,8 @@ const {
   description,
   layout = 'row',
   logoVariant = 'default',
+  logoScale = 1,
+  offsetY = 0,
   class: className,
 } = Astro.props;
 const renderedLogoWidth = logoVariant === 'orange' ? logo.width : 128;
@@ -43,6 +49,7 @@ const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
 ---
 
 <article
+  data-reveal-group
   class:list={[
     'value-block text-center',
     `value-block--${layout}`,
@@ -50,7 +57,7 @@ const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
     className,
   ]}
 >
-  <span class="value-block__logo-frame" aria-hidden="true">
+  <span class="value-block__logo-frame" aria-hidden="true" data-reveal-picto>
     <Image
       src={logo}
       alt=""
@@ -58,17 +65,20 @@ const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
       width={renderedLogoWidth}
       height={renderedLogoHeight}
       class="value-block__logo"
+      style={`scale: ${logoScale};${offsetY !== 0 ? ` translate: 0 ${offsetY}px;` : ''}`}
       loading="lazy"
     />
   </span>
   <div class="value-block__content">
     <h3
       class="value-block__title font-[var(--font-heading)] font-semibold"
+      data-reveal-title
       style="font-size: var(--text-xl); color: var(--color-charcoal); text-wrap: balance;"
       set:html={parseBold(title)}
     />
     <p
       class="value-block__desc"
+      data-reveal-description
       style="font-size: var(--text-base); color: var(--color-text-muted); line-height: 1.7;"
       set:html={parseBold(description)}
     />
@@ -81,13 +91,13 @@ const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
     justify-items: center;
     align-content: start;
     height: 100%;
-    row-gap: clamp(1rem, 2vw, 1.25rem);
+    gap: var(--value-gap);
   }
 
   .value-block__content {
     display: grid;
     justify-items: center;
-    gap: clamp(1rem, 2vw, 1.25rem);
+    gap: var(--value-description-gap);
   }
 
   .value-block__title {
@@ -124,17 +134,17 @@ const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
   }
 
   .value-block--logo-orange .value-block__logo-frame {
-    width: 9rem;
-    height: 9rem;
+    width: var(--value-icon-size);
+    height: var(--value-icon-size);
     max-width: 100%;
-    padding: 1rem;
+    padding: 0.65rem;
     overflow: visible;
     border-radius: 0;
     mask: none;
   }
 
   .value-block--logo-orange {
-    grid-template-rows: 9rem 5.5rem auto;
+    grid-template-rows: var(--value-icon-size) auto auto;
     align-content: start;
     justify-items: center;
     text-align: center;
@@ -147,8 +157,8 @@ const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
   .value-block--logo-orange .value-block__title {
     width: 100%;
     grid-row: 2;
-    min-height: 5.5rem;
-    padding-top: 0.5rem;
+    min-height: 0;
+    padding-top: 0;
     align-items: flex-start;
     justify-content: center;
     text-align: center;
@@ -196,17 +206,17 @@ const renderedLogoHeight = logoVariant === 'orange' ? logo.height : 128;
     }
 
     .value-block--grid-2x2 .value-block__content {
-      grid-template-rows: minmax(2.5em, auto) 1fr;
+      grid-template-rows: auto auto;
       align-self: stretch;
     }
 
     .value-block--grid-2x2 .value-block__title {
-      min-height: 2.5em;
+      min-height: 0;
     }
 
     .value-block--logo-orange {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: 9rem 5.5rem auto;
+      grid-template-rows: var(--value-icon-size) auto auto;
       align-items: start;
       justify-items: center;
       text-align: center;

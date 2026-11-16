@@ -217,14 +217,18 @@ const navLabel = (
       completeLanguageSwitchTransition();
       if (targetLocale || returnFocusToMenu) {
         // The swapped menu is closed/inert: return focus to its spool instead.
-        const focusTarget = returnFocusToMenu
-          ? document.querySelector<HTMLButtonElement>('[data-menu-trigger]')
-          : document.querySelector<HTMLButtonElement>(
-              `.lang-switcher:not(.menu__languages) .lang-switcher__btn[data-locale="${targetLocale}"]`,
-            );
-        focusTarget?.focus({ preventScroll: true });
+        if (returnFocusToMenu) {
+          document.querySelector('[data-menu-trigger]')?.dispatchEvent(
+            new CustomEvent('site:menu-language-focus'),
+          );
+        } else {
+          document.querySelector<HTMLButtonElement>(
+            `.lang-switcher:not(.menu__languages) .lang-switcher__btn[data-locale="${targetLocale}"]`,
+          )?.focus({ preventScroll: true });
+        }
       }
       targetLocale = null;
+      focusInMenu = false;
     });
   }
 
@@ -244,7 +248,7 @@ const navLabel = (
     if (existing) newBody.append(newDocument.importNode(existing, true));
   }
 
-  async function switchLanguage(loc: string): Promise<void> {
+  async function switchLanguage(loc: string, sourceButton: HTMLButtonElement): Promise<void> {
     if (document.documentElement.dataset.languageSwitching === 'true') return;
     if (loc === document.documentElement.lang) return;
     const active = document.querySelector<HTMLButtonElement>(
@@ -253,7 +257,7 @@ const navLabel = (
     if (active) return;
     document.documentElement.dataset.languageSwitching = 'true';
     targetLocale = loc;
-    focusInMenu = Boolean(document.activeElement?.closest('.menu__languages'));
+    focusInMenu = Boolean(sourceButton.closest('.menu__languages'));
     const source = document.documentElement.lang;
     const template =
       document.querySelector<HTMLElement>('[data-language-progress]')?.dataset.languageProgress ??
@@ -314,7 +318,7 @@ const navLabel = (
           btn.getAttribute('aria-pressed') === 'true'
         )
           return;
-        void switchLanguage(loc);
+        void switchLanguage(loc, btn);
       });
     });
   }

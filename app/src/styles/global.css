@@ -39,6 +39,23 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+/* Only JS cold loads are gated; chrome stays usable and no-JS stays visible. */
+html[data-hero-gate='pending'] main,
+html[data-hero-gate='pending'] footer {
+  visibility: hidden;
+}
+
+html[data-hero-gate='pending']::after {
+  content: '';
+  position: fixed;
+  z-index: 89;
+  top: 50%;
+  left: 45%;
+  width: 10%;
+  height: 1px;
+  background: var(--color-brand-orange);
+}
+
 html[data-language-viewport-locked='true'],
 html[data-language-scroll-restoring='true'],
 body[data-language-viewport-locked='true'] {
@@ -131,6 +148,56 @@ ol {
   outline: 2px solid var(--color-gold);
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+/* Shared footer/category hover: independent from GSAP entrance/click wrappers. */
+[data-hover-slide] {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--hover-slide-bg, transparent);
+  border-radius: var(--hover-slide-radius, 0px);
+  transition:
+    transform var(--hover-slide-duration, 0.3s) var(--ease-luxury),
+    border-radius var(--hover-slide-duration, 0.3s) var(--ease-luxury),
+    background-color var(--hover-slide-duration, 0.3s) var(--ease-luxury);
+}
+
+[data-hover-slide]:is(:hover, :focus-visible) {
+  z-index: 1;
+  background-color: var(--hover-slide-hover-bg, var(--color-brand-orange));
+  border-radius: 15px;
+  transform: scale(var(--hover-slide-scale, 1.03));
+}
+
+[data-hover-slide]:is(:hover, :focus-visible) [data-hover-slide-content] {
+  animation: hover-slide-in var(--hover-slide-duration, 0.3s) var(--ease-luxury) both;
+}
+
+[data-hover-slide]:active {
+  transform: scale(0.9);
+}
+
+@keyframes hover-slide-in {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-hover-slide] {
+    transition: none;
+  }
+  [data-hover-slide]:is(:hover, :focus-visible, :active) {
+    transform: none;
+  }
+  [data-hover-slide]:is(:hover, :focus-visible) [data-hover-slide-content] {
+    animation: none;
+  }
 }
 
 /* ==========================================================================

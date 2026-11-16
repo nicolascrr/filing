@@ -17,12 +17,17 @@
  * global reveals + SplitText. GSAP dedupes plugin registration, so the
  * shared `gsap.ts` import here and the per-island imports coexist safely.
  *
- * Route changes are choreographed here with GSAP around ClientRouter's swap.
+ * Route changes await hero decoding before ClientRouter's swap; GSAP animates
+ * only the non-hero content so an already-ready background never fades out.
  * Native view-transition pseudo-element animation is disabled in CSS to avoid
  * double motion; locale-only transactions opt out through document state.
  */
 import { gsap, ScrollTrigger } from './gsap';
-import type { TransitionBeforePreparationEvent } from 'astro:transitions/client';
+import type {
+  TransitionBeforePreparationEvent,
+  TransitionBeforeSwapEvent,
+} from 'astro:transitions/client';
+import { gateInitialHero, prepareHero, type PreparedHero } from './heroMediaReady';
 import {
   consumeLanguageSwitchState,
   doubleRestoreLanguageSwitchScroll,
@@ -37,7 +42,7 @@ let ctx: gsap.Context | null = null;
 /** Restores grouped text DOM after GSAP has reverted its tweens. */
 let revertReveals: (() => void) | null = null;
 let routeCtx: gsap.Context | null = null;
-let settleRouteOut: (() => void) | null = null;
+let preparedHero: PreparedHero | null = null;
 let pageGeneration = 0;
 let restoreFrame = 0;
 
@@ -51,53 +56,35 @@ function shouldSkipRouteChoreography(): boolean {
 
 function cleanupRouteChoreography(): void {
   const context = routeCtx;
-  const settle = settleRouteOut;
   routeCtx = null;
-  settleRouteOut = null;
-  try {
-    context?.revert();
-  } finally {
-    // revert() may suppress tween callbacks; always release the loader gate.
-    settle?.();
-  }
-}
-
-function animateRouteOut(): Promise<void> {
-  const main = document.querySelector<HTMLElement>('main');
-  if (!main || shouldSkipRouteChoreography()) return Promise.resolve();
-
-  cleanupRouteChoreography();
-  return new Promise((resolve) => {
-    let settled = false;
-    const settle = (): void => {
-      if (settled) return;
-      settled = true;
-      if (settleRouteOut === settle) settleRouteOut = null;
-      resolve();
-    };
-    settleRouteOut = settle;
-    routeCtx = gsap.context(() => {
-      gsap.to(main, {
-        autoAlpha: 0,
-        y: -32,
-        duration: 0.6,
-        ease: 'power2.inOut',
-        onComplete: settle,
-        onInterrupt: settle,
-      });
-    }, main);
-  });
+  context?.revert();
 }
 
 function onBeforePreparation(event: TransitionBeforePreparationEvent): void {
-  if (shouldSkipRouteChoreography()) return;
+  preparedHero?.dispose();
+  preparedHero = null;
   const originalLoader = event.loader;
   event.loader = async (): Promise<void> => {
+    await originalLoader();
+    if (event.signal.aborted) return;
+    const prepared = await prepareHero(event.newDocument, event.signal);
+    if (event.signal.aborted) prepared.dispose();
+    else preparedHero = prepared;
+  };
+}
+
+function commitHero(event: TransitionBeforeSwapEvent): void {
+  const prepared = preparedHero;
+  preparedHero = null;
+  const swap = event.swap;
+  event.swap = (): void => {
     try {
-      await Promise.all([originalLoader(), animateRouteOut()]);
-    } catch (error) {
-      cleanupRouteChoreography();
-      throw error;
+      swap();
+      prepared?.commit();
+      document.documentElement.dataset.heroGate = prepared?.ready === false ? 'fallback' : 'ready';
+      document.dispatchEvent(new Event('filing:hero-gate-open'));
+    } finally {
+      prepared?.dispose();
     }
   };
 }
@@ -106,10 +93,18 @@ function animateRouteIn(): void {
   cleanupRouteChoreography();
   const main = document.querySelector<HTMLElement>('main');
   if (!main || shouldSkipRouteChoreography()) return;
+  const content = Array.from(main.children).filter(
+    (child) =>
+      !child.matches('.hero, .page-hero, script, style') &&
+      !child.querySelector('[data-hero-media]') &&
+      !child.matches('[data-gallery-root]') &&
+      !child.querySelector('[data-atelier-presentation]'),
+  );
+  if (!content.length) return;
 
   routeCtx = gsap.context(() => {
     gsap.fromTo(
-      main,
+      content,
       { autoAlpha: 0, y: 48 },
       {
         autoAlpha: 1,
@@ -183,6 +178,7 @@ function cleanup(): void {
 
 document.addEventListener('astro:page-load', init);
 document.addEventListener('astro:before-preparation', onBeforePreparation);
+document.addEventListener('astro:before-swap', commitHero);
 document.addEventListener('astro:before-swap', preserveLanguageSwitchViewportLock);
 document.addEventListener('astro:after-swap', doubleRestoreLanguageSwitchScroll);
 document.addEventListener('astro:after-swap', animateRouteIn);
@@ -191,3 +187,5 @@ window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',
   cleanupRouteChoreography();
   init();
 });
+
+gateInitialHero();

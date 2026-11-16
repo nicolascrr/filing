@@ -10,9 +10,11 @@
       "sampleCount": "Campioni: {count}",
       "imageCount": "Immagini: {count}",
       "viewCategory": "Vedi la categoria {category}",
-      "emptyCoiling": "Al momento non sono disponibili campioni Coiling."
+      "emptyCoiling": "Al momento non sono disponibili campioni Coiling.",
+      "empty": "Al momento non sono disponibili immagini."
     },
     "photo": {
+      "zoomHelp": "Con il mouse, fai clic per ingrandire a 2,5×, poi fai di nuovo clic per tornare alla vista iniziale. Trascina per spostare l’immagine ingrandita. Su schermi tattili, pizzica fino a 2,5× o tocca due volte per ingrandire o ripristinare. Quando l’immagine ha il focus: + e − per lo zoom, 0 per ripristinare, frecce per spostare l’immagine ingrandita o cambiare immagine alla scala iniziale.",
       "zoomIn": "Ingrandisci",
       "zoomOut": "Riduci",
       "reset": "Reimposta lo zoom",
@@ -82,7 +84,7 @@
         "description": "L'insieme delle nostre produzioni è realizzato nei nostri atelier in Francia, vicino a Lione nella regione Alvernia-Rodano-Alpi, culla storica della tradizione tessile."
       },
       "patrimoine": {
-        "title": "**IMPRESA DEL PATRIMONIO VIVENTE**",
+        "title": "**ENTREPRISE DU PATRIMOINE VIVANT**",
         "description": "Dal 2023, Fil'ing Broderies è fiera di detenere l'etichetta \"Entreprise du Patrimoine Vivant\" (Impresa del Patrimonio Vivente), conferita dalla prefettura della regione Alvernia-Rodano-Alpi."
       },
       "valeurs": {
@@ -166,7 +168,6 @@
       "3d": "3D",
       "cornely": "Cornely",
       "macrame": "Macramé",
-      "coiling": "Coiling",
       "perles": "Perle",
       "multi-techniques": "Multi-tecnica",
       "sequins": "Sequins",
@@ -240,16 +241,25 @@
       "contact": "CONTATTO",
       "trajet": "PERCORSO DA",
       "gare": "Stazione TGV Lyon Part-Dieu",
-      "aeroport": "Aeroporto e Stazione TGV Lyon Saint-Exupéry",
+      "aeroport": "Aeroporto Lyon Saint-Exupéry",
+      "email": {
+        "dialogLabel": "Contatta Fil'ing via email",
+        "copy": "Copia l’indirizzo e-mail contact@filing.fr",
+        "send": "Invia un’e-mail",
+        "address": "Indirizzo email",
+        "copied": "Indirizzo email copiato.",
+        "manual": "La copia automatica non è disponibile. Seleziona l'indirizzo e copialo manualmente."
+      },
       "copyright": "2026 Fil'ing Broderies. © Tutti i diritti riservati. Realizzato da Nicolas ed Emilie.",
+      "legalNotice": "Note legali",
       "sitemapLabel": "Mappa del sito",
       "aria": {
         "mail": "Invia un'email a Fil'ing Broderies",
         "adresse": "Localizza Fil'ing Broderies sulla mappa",
         "instagram": "Fil'ing Broderies su Instagram (si apre in una nuova scheda)",
         "linkedin": "Fil'ing Broderies su LinkedIn (si apre in una nuova scheda)",
-        "gare": "Stazione TGV Lyon Part-Dieu",
-        "aeroport": "Aeroporto e Stazione TGV Lyon Saint-Exupéry"
+        "gare": "Indicazioni per Fil'ing dalla stazione TGV Lyon Part-Dieu (nuova scheda)",
+        "aeroport": "Indicazioni per Fil'ing dall'aeroporto Lyon Saint-Exupéry (nuova scheda)"
       }
     }
   }

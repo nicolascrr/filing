@@ -12,16 +12,6 @@ export const locales = ['fr', 'en', 'it'] as const;
 export type Locale = (typeof locales)[number];
 
 /**
- * Human-readable labels for each locale, used by the LanguageSwitcher.
- * Keys are the ISO codes; values are the native endonyms.
- */
-export const localeLabels: Record<Locale, string> = {
-  fr: 'FR',
-  en: 'EN',
-  it: 'IT',
-};
-
-/**
  * Validate that a candidate string is a supported locale.
  * Returns the locale if valid, otherwise null.
  */

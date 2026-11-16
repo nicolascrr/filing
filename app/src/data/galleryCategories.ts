@@ -4,7 +4,6 @@ export const galleryCategories = [
   ['3d', '3D'],
   ['cornely', 'Cornely'],
   ['macrame', 'Macramé'],
-  ['coiling', null],
   ['perles', 'Perles'],
   ['multi-techniques', 'Multi-techniques'],
   ['sequins', 'Sequins'],

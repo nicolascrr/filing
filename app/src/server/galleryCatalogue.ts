@@ -5,10 +5,8 @@ import mediaManifest from '../data/galleryMediaManifest.json';
 import type { GalleryCard, GalleryManifest, GalleryPhoto } from '../data/galleryTypes';
 
 // Literal glob is resolved by Astro/Vite at build time, never by request paths.
-const assets = import.meta.glob<{ default: ImageMetadata }>(
-  '../assets/gallery/catalogue/web/**/*.webp',
-);
-const prefix = '../assets/gallery/catalogue/';
+const assets = import.meta.glob<{ default: ImageMetadata }>('../assets/gallery/**/*.webp');
+const prefix = '../assets/gallery/';
 const natural = new Intl.Collator('en', { numeric: true, sensitivity: 'variant' });
 interface Media {
   id: string;
@@ -43,6 +41,7 @@ export const catalogue = galleryCategories.map((category) => {
   const types = [...groups.values()].sort(
     (a, b) => Number(a.root) - Number(b.root) || natural.compare(a.name, b.name),
   );
+  if (!types.length) throw new Error(`Empty gallery category: ${category.folder}`);
   return { ...category, types };
 });
 const indexedImages = catalogue.reduce(
@@ -53,13 +52,17 @@ const indexedImages = catalogue.reduce(
 if (indexedImages !== mediaManifest.count || Object.keys(assets).length !== mediaManifest.count) {
   throw new Error('Prepared gallery mapping/import coverage mismatch');
 }
-// Changes to membership/order invalidate session selection and client caches.
+// Physical paths and category membership/order also invalidate client caches.
 let hash = 2166136261;
-for (const entry of mediaManifest.entries) {
-  for (const char of `${entry.source}:${entry.destinationSha256}`)
-    hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+for (const value of [
+  ...galleryCategories.map((category) => `${category.key}:${category.folder}:${category.labelKey}`),
+  ...mediaManifest.entries.map(
+    (entry) => `${entry.source}:${entry.destination}:${entry.destinationSha256}`,
+  ),
+]) {
+  for (const char of value) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
 }
-export const catalogueVersion = `catalogue-v1-${(hash >>> 0).toString(36)}`;
+export const catalogueVersion = `catalogue-v3-${(hash >>> 0).toString(36)}`;
 type Translate = (key: string) => string;
 const sizes = '(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 30vw';
 
@@ -173,7 +176,7 @@ export async function galleryManifest(
       result.cards = await Promise.all(category.types.map((s) => card(category, s, s.images[0])));
     }
   } else {
-    // Seeded shuffle selects distinct types; each selected type gets its own random photo.
+    // Shuffle groups, never their images: the first image is always the cover.
     let state = Number(seed) >>> 0;
     const random = () => {
       state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
@@ -185,9 +188,7 @@ export async function galleryManifest(
       [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
     }
     result.cards = await Promise.all(
-      eligible
-        .slice(0, 18)
-        .map(({ c, s }) => card(c, s, s.images[Math.floor(random() * s.images.length)])),
+      eligible.slice(0, 18).map(({ c, s }) => card(c, s, s.images[0])),
     );
   }
   return result;

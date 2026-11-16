@@ -13,25 +13,44 @@ const { cards, hidden = false } = Astro.props;
 </div>
 <style is:global>
   .catalogue-masonry {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-    align-items: start;
+    --catalogue-columns: 2;
+    columns: 2;
+    gap: 4px;
+    padding-top: 8px;
+  }
+  .catalogue-masonry:not([data-layout]) .catalogue-card:first-child {
+    margin-top: -8px;
+  }
+  .catalogue-masonry:not([data-layout]) .catalogue-card {
+    break-inside: avoid;
+    margin-bottom: 4px;
   }
   .catalogue-masonry[data-layout] {
-    grid-auto-rows: 10px;
+    display: grid;
+    padding-top: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1px;
+    row-gap: 0;
+    align-items: start;
   }
   .catalogue-masonry[hidden] {
     display: none;
   }
   @media (min-width: 768px) {
     .catalogue-masonry {
+      --catalogue-columns: 3;
+      columns: 3;
+    }
+    .catalogue-masonry[data-layout] {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: 2rem;
     }
   }
   @media (min-width: 1280px) {
     .catalogue-masonry {
+      --catalogue-columns: 4;
+      columns: 4;
+    }
+    .catalogue-masonry[data-layout] {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }

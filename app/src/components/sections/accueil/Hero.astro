@@ -6,9 +6,9 @@
  * of `--content-max` (full-width, full-bleed).
  *
  * Video:
- *   The real V1 MP4 lives at `public/hero-video.mp4` and is served as
- *   `/hero-video.mp4`. The imported poster remains the visual fallback when
- *   playback is unavailable.
+ *   The mobile and desktop MP4s are imported from `src/assets/hero/`.
+ *   Native source selection loads only the matching viewport's video. The
+ *   imported poster remains the visual fallback when playback is unavailable.
  *
  * Overlay layout:
  *   - Logo top-center (Astro `<Image>`).
@@ -28,30 +28,36 @@
  *   - A dark gradient scrim ensures white text/logo stay legible.
  */
 
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import logo from '../../../assets/brand/logo-orange-shadow.svg';
 import LanguageSwitcher from '../../chrome/LanguageSwitcher.astro';
 // ffmpeg is not available in the project environment. This supplied client
 // photograph is therefore used as the honest, real-image poster fallback.
-import heroPoster from '../../../content/Médias/Showroom/Broderie/Traditionnelle/P1000499.JPG';
+import heroPoster from '../../../assets/hero/hero-poster.JPG';
+import heroVideo from '../../../assets/hero/hero-video.mp4?url';
+import heroVideoMobile from '../../../assets/hero/hero-video-mobile.mp4?url';
 
 const t = Astro.locals.t;
 const tagline = t('accueil.hero.tagline');
+const fallbackPoster = await getImage({ src: heroPoster, width: 1920, format: 'webp' });
 ---
 
 <section class="hero" aria-label={tagline}>
+  <img data-hero-fallback data-src={fallbackPoster.src} alt="" class="hero__poster" />
+  <noscript><img src={fallbackPoster.src} alt="" class="hero__poster" /></noscript>
   <!-- Background video (decorative) with a poster fallback. -->
   <video
     class="hero__video"
+    data-hero-media
     muted
     loop
     playsinline
     preload="metadata"
-    poster={heroPoster.src}
     aria-hidden="true"
     tabindex="-1"
   >
-    <source src="/hero-video.mp4" type="video/mp4" />
+    <source src={heroVideoMobile} type="video/mp4" media="(max-width: 767.98px)" />
+    <source src={heroVideo} type="video/mp4" />
   </video>
 
   <!-- Dark gradient scrim for legibility of white text/logo. -->
@@ -90,6 +96,8 @@ const tagline = t('accueil.hero.tagline');
     background: var(--color-charcoal); /* fallback behind poster/video */
   }
 
+  .hero__poster,
+  .hero :global(.hero__first-frame),
   .hero__video {
     position: absolute;
     inset: 0;
@@ -97,6 +105,24 @@ const tagline = t('accueil.hero.tagline');
     height: 100%;
     object-fit: cover;
     z-index: 0;
+  }
+
+  .hero :global(.hero__first-frame[data-playing='true']) {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero :global(.hero__first-frame[data-playing='true']) {
+      display: block;
+    }
+  }
+
+  .hero__poster:not([src]) {
+    display: none;
+  }
+
+  .hero__video[data-media-failed] {
+    visibility: hidden;
   }
 
   .hero__scrim {
@@ -122,10 +148,12 @@ const tagline = t('accueil.hero.tagline');
     z-index: 3;
     display: flex;
     justify-content: center;
+    max-width: calc(100% - 2 * var(--content-padding) - 19rem);
   }
 
   .hero__logo-img {
-    width: clamp(140px, 30vw, 220px);
+    width: clamp(280px, 60vw, 440px);
+    max-width: 100%;
     height: auto;
   }
 
@@ -165,9 +193,10 @@ const tagline = t('accueil.hero.tagline');
   @media (max-width: 639px) {
     .hero__logo {
       top: calc(var(--content-padding) + 5rem);
+      max-width: calc(100% - 2 * var(--content-padding));
     }
     .hero__logo-img {
-      width: clamp(180px, 52vw, 260px);
+      width: clamp(360px, 104vw, 520px);
     }
   }
 
@@ -210,20 +239,80 @@ const tagline = t('accueil.hero.tagline');
     if (!video) return;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const syncPlayback = (): void => {
-      if (reducedMotion.matches) {
+    const hero = video.closest<HTMLElement>('.hero');
+    if (!hero) return;
+    const bounds = hero.getBoundingClientRect();
+    let visible = bounds.bottom > 0 && bounds.top < window.innerHeight;
+    let disposed = false;
+    let userPaused = false;
+    let automaticPauseEvents = 0;
+    let playPending = false;
+    let playbackFrame = 0;
+    let firstFramePresented = false;
+    const canPlay = (): boolean =>
+      !disposed && firstFramePresented && video.dataset.mediaReady === 'true' && visible &&
+      !document.hidden && !reducedMotion.matches && !userPaused;
+    const pause = (): void => {
+      if (!video.paused) {
+        automaticPauseEvents++;
         video.pause();
-        video.currentTime = 0;
+      }
+    };
+    const syncPlayback = (): void => {
+      if (!canPlay()) {
+        pause();
+        if (reducedMotion.matches && video.readyState >= 1 && video.currentTime !== 0) {
+          video.currentTime = 0;
+        }
         return;
       }
+      if (playPending || !video.paused) return;
+      playPending = true;
+      void video.play()
+        .then(() => {
+          if (!canPlay()) pause();
+        })
+        .catch(() => {
+          // Autoplay denial leaves the decoded, paused first frame visible.
+        })
+        .finally(() => { playPending = false; });
+    };
+    const onPause = (): void => {
+      if (automaticPauseEvents) automaticPauseEvents--;
+      else userPaused = true;
+    };
+    const onPlay = (): void => {
+      userPaused = false;
+      if (!canPlay()) pause();
+    };
+    const onPlaying = (): void => {
+      const firstFrame = hero.querySelector<HTMLCanvasElement>('.hero__first-frame');
+      if (firstFrame) firstFrame.dataset.playing = 'true';
+    };
+    video.addEventListener('pause', onPause);
+    video.addEventListener('play', onPlay);
+    video.addEventListener('playing', onPlaying);
+    const observer = typeof IntersectionObserver === 'undefined' ? null :
+      new IntersectionObserver(([entry]) => {
+        if (!entry) return;
+        visible = entry.isIntersecting;
+        syncPlayback();
+      });
+    observer?.observe(hero);
+    document.addEventListener('visibilitychange', syncPlayback);
 
-      void video.play().catch(() => {
-        // Autoplay can still be rejected by a browser policy; the poster stays visible.
+    // Leave the decoded paused first frame on screen for an initial paint.
+    const onMediaReady = (): void => {
+      cancelAnimationFrame(playbackFrame);
+      playbackFrame = requestAnimationFrame(() => {
+        playbackFrame = requestAnimationFrame(() => {
+          firstFramePresented = true;
+          syncPlayback();
+        });
       });
     };
-
-    syncPlayback();
-    const hero = video.closest<HTMLElement>('.hero');
+    document.addEventListener('filing:hero-ready', onMediaReady);
+    if (video.dataset.mediaReady === 'true') onMediaReady();
     const tagline = hero?.querySelector<HTMLElement>('[data-hero-tagline]');
     const media = gsap.matchMedia();
     media.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
@@ -249,6 +338,14 @@ const tagline = t('accueil.hero.tagline');
     });
     reducedMotion.addEventListener('change', syncPlayback);
     cleanup = () => {
+      disposed = true;
+      cancelAnimationFrame(playbackFrame);
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', syncPlayback);
+      document.removeEventListener('filing:hero-ready', onMediaReady);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('playing', onPlaying);
       media.revert();
       reducedMotion.removeEventListener('change', syncPlayback);
       video.pause();

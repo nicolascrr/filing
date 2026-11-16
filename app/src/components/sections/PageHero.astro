@@ -32,6 +32,7 @@
 
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import LanguageSwitcher from '../chrome/LanguageSwitcher.astro';
 
 export interface Props {
   /** Background hero image (decorative). */
@@ -56,13 +57,17 @@ const { image, title, class: className } = Astro.props;
     sizes="100vw"
     class="page-hero__img"
     loading="eager"
+    fetchpriority="high"
+    data-hero-media
   />
 
   <!-- Dark gradient scrim for legibility of the white title. -->
   <div class="page-hero__scrim" aria-hidden="true"></div>
+  <div class="page-hero__languages">
+    <LanguageSwitcher class="page-hero__language-switcher" />
+  </div>
 
-  <!-- Centered page title. `data-split` opts it into the SplitText char
-       reveal (US-23); above-the-fold, so it plays on load. -->
+  <!-- Centered page title, owned only by the global reveal sequence. -->
   <h1 class="page-hero__title" data-split>
     {title}
   </h1>
@@ -102,6 +107,39 @@ const { image, title, class: className } = Astro.props;
     height: 100%;
     object-fit: cover;
     z-index: 0;
+  }
+
+  .page-hero__languages {
+    position: absolute;
+    top: var(--content-padding);
+    left: var(--content-padding);
+    z-index: 3;
+  }
+
+  .page-hero__language-switcher :global(.lang-switcher__list) {
+    height: 44px;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .page-hero__language-switcher :global(.lang-switcher__btn) {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    color: var(--color-warm-white);
+  }
+
+  .page-hero__language-switcher :global(.lang-switcher__flag) {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .page-hero__language-switcher :global(.lang-switcher__btn[aria-pressed='true']) {
+    box-shadow: none;
+    opacity: 1;
   }
 
   .page-hero__scrim {
@@ -163,6 +201,7 @@ const { image, title, class: className } = Astro.props;
     border-radius: 2px;
     transform-origin: top center;
     animation: page-hero-scroll-cue 1.8s var(--ease-luxury, ease-in-out) infinite;
+    animation-play-state: var(--page-hero-cue-state, running);
   }
 
   @keyframes page-hero-scroll-cue {
@@ -197,3 +236,42 @@ const { image, title, class: className } = Astro.props;
     }
   }
 </style>
+
+<script>
+  const cleanups: Array<() => void> = [];
+  const cleanupPageHeroes = (): void => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+  };
+
+  function initPageHeroes(): void {
+    cleanupPageHeroes();
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    document.querySelectorAll<HTMLElement>('.page-hero').forEach((hero) => {
+      const bounds = hero.getBoundingClientRect();
+      let visible = bounds.bottom > 0 && bounds.top < window.innerHeight;
+      const sync = (): void => {
+        hero.style.setProperty('--page-hero-cue-state',
+          visible && !document.hidden && !reduced.matches ? 'running' : 'paused');
+      };
+      const observer = typeof IntersectionObserver === 'undefined' ? null :
+        new IntersectionObserver(([entry]) => {
+          if (!entry) return;
+          visible = entry.isIntersecting;
+          sync();
+        });
+      observer?.observe(hero);
+      document.addEventListener('visibilitychange', sync);
+      reduced.addEventListener('change', sync);
+      sync();
+      cleanups.push(() => {
+        observer?.disconnect();
+        document.removeEventListener('visibilitychange', sync);
+        reduced.removeEventListener('change', sync);
+        hero.style.removeProperty('--page-hero-cue-state');
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initPageHeroes);
+  document.addEventListener('astro:before-swap', cleanupPageHeroes);
+</script>

@@ -10,9 +10,11 @@
       "sampleCount": "Samples: {count}",
       "imageCount": "Images: {count}",
       "viewCategory": "View the {category} category",
-      "emptyCoiling": "No Coiling samples are currently available."
+      "emptyCoiling": "No Coiling samples are currently available.",
+      "empty": "No images are currently available."
     },
     "photo": {
+      "zoomHelp": "With a mouse, click to zoom to 2.5×, then click again to return to the initial view. Drag to pan when zoomed. On touch screens, pinch up to 2.5× or double-tap to zoom or reset. With the image focused: + and − to zoom, 0 to reset, arrows to pan when zoomed or change images at the initial scale.",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "reset": "Reset zoom",
@@ -82,7 +84,7 @@
         "description": "All our production is carried out in our workshops in France, near Lyon in the Auvergne-Rhône-Alpes region, the historic cradle of the textile tradition."
       },
       "patrimoine": {
-        "title": "**LIVING HERITAGE COMPANY**",
+        "title": "**ENTREPRISE DU PATRIMOINE VIVANT**",
         "description": "Since 2023, Fil'ing Broderies is proud to hold the \"Entreprise du Patrimoine Vivant\" (Living Heritage Company) label, awarded by the prefecture of the Auvergne-Rhône-Alpes region."
       },
       "valeurs": {
@@ -166,7 +168,6 @@
       "3d": "3D",
       "cornely": "Cornely",
       "macrame": "Macramé",
-      "coiling": "Coiling",
       "perles": "Beads",
       "multi-techniques": "Multi-technique",
       "sequins": "Sequins",
@@ -240,16 +241,25 @@
       "contact": "CONTACT",
       "trajet": "JOURNEY FROM",
       "gare": "Lyon Part-Dieu TGV Station",
-      "aeroport": "Lyon Saint-Exupéry Airport and TGV Station",
+      "aeroport": "Lyon Saint-Exupéry Airport",
+      "email": {
+        "dialogLabel": "Contact Fil'ing by email",
+        "copy": "Copy email address contact@filing.fr",
+        "send": "Send an email",
+        "address": "Email address",
+        "copied": "Email address copied.",
+        "manual": "Automatic copying is unavailable. Select the address and copy it manually."
+      },
       "copyright": "2026 Fil'ing Broderies. © All rights reserved. Made by Nicolas and Emilie.",
+      "legalNotice": "Legal notice",
       "sitemapLabel": "Sitemap",
       "aria": {
         "mail": "Send an email to Fil'ing Broderies",
         "adresse": "Locate Fil'ing Broderies on the map",
         "instagram": "Fil'ing Broderies on Instagram (opens in a new tab)",
         "linkedin": "Fil'ing Broderies on LinkedIn (opens in a new tab)",
-        "gare": "Lyon Part-Dieu TGV Station",
-        "aeroport": "Lyon Saint-Exupéry Airport and TGV Station"
+        "gare": "Directions to Fil'ing from Lyon Part-Dieu TGV Station (new tab)",
+        "aeroport": "Directions to Fil'ing from Lyon Saint-Exupéry Airport (new tab)"
       }
     }
   }

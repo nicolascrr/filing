@@ -13,6 +13,7 @@
 
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import { parseBold } from '../../i18n/t';
 
 export interface Props {
   /** Centered overlay title (accessible name of the link). */
@@ -27,6 +28,10 @@ export interface Props {
   objectPosition?: string;
   /** Mobile alignment inside the intentional contain matte. */
   mobileObjectPosition?: string;
+  /** Home-only embroidered title reveal; other instances stay static. */
+  animateTitle?: boolean;
+  /** Slower home-page pacing without changing other opted-in instances. */
+  titleRevealPace?: 'standard' | 'slow';
 }
 
 const {
@@ -36,12 +41,16 @@ const {
   class: className,
   objectPosition = 'center center',
   mobileObjectPosition = objectPosition,
+  animateTitle = false,
+  titleRevealPace = 'standard',
 } = Astro.props;
 ---
 
 <a
   href={url}
-  aria-label={title}
+  aria-label={title.replace(/\*\*/g, '')}
+  data-teaser-title-reveal={animateTitle ? '' : undefined}
+  data-teaser-title-pace={animateTitle ? titleRevealPace : undefined}
   class:list={[
     'teaser group relative block w-full overflow-hidden',
     'sm:h-[50vh] sm:min-h-[360px] md:h-[60vh]',
@@ -60,16 +69,30 @@ const {
   <!-- Dark scrim for text readability -->
   <div class="teaser__scrim pointer-events-none absolute inset-0" aria-hidden="true"></div>
   <div class="absolute inset-0 flex items-center justify-center px-6">
-    <span
-      class="teaser__title text-center text-white font-[var(--font-heading)] font-medium"
-      style="font-size: var(--text-3xl); text-wrap: balance; letter-spacing: 0.02em;"
+    <h2
+      class="teaser__title text-center text-white font-medium"
+      style="font-size: var(--teaser-title-size, var(--text-3xl)); text-wrap: balance; letter-spacing: 0.02em;"
     >
-      {title}
-    </span>
+      <span data-teaser-title-text set:html={parseBold(title)} />
+    </h2>
   </div>
 </a>
 
 <style>
+  .teaser__title {
+    position: relative;
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    line-height: inherit;
+    color: white;
+    text-transform: uppercase;
+  }
+
+  .teaser[data-teaser-title-pace='slow'] {
+    --teaser-title-size: calc(var(--text-3xl) * 1.2);
+  }
+
   .teaser__img {
     /* Size the image to the frame, not its intrinsic ratio: the unlayered
        global image reset overrides Tailwind's layered height utilities. */
@@ -81,10 +104,7 @@ const {
     background: color-mix(in srgb, var(--color-charcoal) 94%, var(--color-brand-orange));
     object-position: var(--teaser-object-position);
     transform-origin: var(--teaser-object-position);
-    transition:
-      transform var(--duration-base) var(--ease-luxury),
-      filter var(--duration-base) var(--ease-luxury);
-    will-change: transform;
+    transition: transform var(--duration-base) var(--ease-luxury);
   }
 
   @media (max-width: 639px) {
@@ -126,3 +146,81 @@ const {
     }
   }
 </style>
+
+<script>
+  import { gsap, SplitText } from '../../scripts/gsap';
+  import { getLanguageSwitchState } from '../../scripts/languageSwitchState';
+
+  const cleanups: Array<() => void> = [];
+  const cleanupTeasers = (): void => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+  };
+
+  function initTeasers(): void {
+    cleanupTeasers();
+    // Locale-only arrivals must not hide text in the restored viewport.
+    if (
+      getLanguageSwitchState() ||
+      document.documentElement.dataset.suppressArrival === 'true' ||
+      document.documentElement.dataset.languageSwitching === 'true'
+    ) return;
+
+    document.querySelectorAll<HTMLElement>('[data-teaser-title-reveal]').forEach((root) => {
+      const text = root.querySelector<HTMLElement>('[data-teaser-title-text]');
+      if (!text) return;
+      const slow = root.dataset.teaserTitlePace === 'slow';
+      const originalHTML = text.innerHTML;
+      let presented = false;
+      const media = gsap.matchMedia();
+      media.add({
+        motion: '(prefers-reduced-motion: no-preference)',
+        mobile: slow ? '(max-width: 639px)' : 'not all',
+      }, (matchContext) => {
+        if (!matchContext.conditions?.motion || presented) return;
+        const context = gsap.context(() => undefined, root);
+        const state: { split: SplitText | null } = { split: null };
+        try {
+          context.add(() => {
+            state.split = SplitText.create(text, {
+              type: 'words,chars',
+              aria: 'auto',
+              autoSplit: true,
+              onSplit(self) {
+                return gsap.timeline({
+                  scrollTrigger: {
+                    trigger: root,
+                    start: slow ? (matchContext.conditions?.mobile ? 'top 75%' : 'top 25%') : 'top 80%',
+                    once: true,
+                  },
+                  onStart: () => { presented = true; },
+                })
+                  .from(self.chars, {
+                    opacity: 0,
+                    rotation: 5,
+                    transformOrigin: '50% 75%',
+                    duration: slow ? 2.2 : 1.2,
+                    stagger: { amount: slow ? 0.8 : 0.35, from: 'center' },
+                    ease: 'power2.out',
+                  });
+              },
+            });
+          });
+        } catch (error) {
+          context.revert();
+          state.split?.revert();
+          text.innerHTML = originalHTML;
+          text.removeAttribute('aria-label');
+          console.warn('Teaser title reveal unavailable; keeping static text.', error);
+        }
+        return () => {
+          context.revert();
+          state.split?.revert();
+        };
+      });
+      cleanups.push(() => media.revert());
+    });
+  }
+
+  document.addEventListener('astro:page-load', initTeasers);
+  document.addEventListener('astro:before-swap', cleanupTeasers);
+</script>

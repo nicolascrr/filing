@@ -47,6 +47,7 @@ export function initReveals(selector = REVEAL_SELECTOR, options: RevealOptions =
         ),
       ).filter((part, _, all) => !all.some((parent) => parent !== part && parent.contains(part)));
       const targets = parts.length ? parts : [root];
+      let descriptionIndex = 0;
       targets.forEach((el) => {
         const picto = el.hasAttribute('data-reveal-picto');
         const title =
@@ -58,24 +59,36 @@ export function initReveals(selector = REVEAL_SELECTOR, options: RevealOptions =
           el.dataset.revealStyle === 'atelier-lines' ||
           el.dataset.revealStyle === 'embroidered-words' ||
           el.tagName === 'P';
-        const offset = picto ? 0 : title ? 0.1 : 0.2;
+        const offset = picto ? 0 : title ? 0.12 : 0.24 + descriptionIndex++ * 0.14;
         if (text && !el.querySelector('a, button, input')) {
+          const embroidered = el.dataset.revealStyle === 'embroidered-words';
+          let animation: gsap.core.Tween | undefined;
           const split = SplitText.create(el, {
-            type: 'lines',
+            type: embroidered ? 'lines,words' : 'lines',
             mask: 'lines',
             autoSplit: true,
             linesClass: 'reveal-line',
             aria: 'none',
             onSplit(self) {
-              const tween = gsap.from(self.lines, {
-                yPercent: 110,
+              // Like GSAP's SplitTextAnimator helper: the group owns playback,
+              // not SplitText's standalone totalTime restoration. Replace in place.
+              const playhead = sequence.time();
+              const completed = playhead > 0 && sequence.progress() === 1;
+              animation?.kill();
+              // Word accents stitch across the line instead of moving its mask.
+              animation = gsap.from(embroidered ? self.words : self.lines, {
+                y: embroidered ? 16 : 24,
                 opacity: 0,
-                duration: 1.2,
-                ease: 'power3.out',
-                stagger: Math.min(0.08, 0.4 / Math.max(1, self.lines.length - 1)),
+                rotation: embroidered ? 1.5 : 0,
+                transformOrigin: '0% 100%',
+                duration: 1.15,
+                ease: embroidered ? 'power2.out' : 'power3.out',
+                stagger: { amount: embroidered ? 0.3 : 0.24 },
               });
-              sequence.add(tween, offset);
-              return tween;
+              animation.duration(1.4);
+              sequence.add(animation, offset);
+              if (completed) sequence.progress(1, true);
+              else sequence.time(playhead, true);
             },
           });
           splits.push(split);
@@ -84,7 +97,7 @@ export function initReveals(selector = REVEAL_SELECTOR, options: RevealOptions =
             el,
             {
               opacity: 0,
-              y: Math.min(120, Math.max(40, numberAttribute(el, 'data-reveal-y', title ? 56 : 40))),
+              y: Math.min(32, Math.max(0, numberAttribute(el, 'data-reveal-y', title ? 32 : 24))),
               rotation: picto ? -3 : 0,
               duration: picto ? 0.9 : title ? 1.1 : 1.2,
             },

@@ -1,8 +1,4 @@
-/** Explicit offline preparation, never run by SSR.
- * node scripts/prepare-gallery-media.mjs --inspect
- * node scripts/prepare-gallery-media.mjs --prepare [--remove-raw]
- * Requires the sharp version already installed by Astro. Originals are read-only.
- */
+/** Offline inventory/reindex only. Canonical prepared media are never rewritten. */
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,193 +6,131 @@ import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
-const sourceRoot = path.resolve(app, '../medias/Médias/Showroom/Catalogue broderie');
-const catalogueRoot = path.join(app, 'src/assets/gallery/catalogue');
+const galleryRoot = path.join(app, 'src/assets/gallery');
 const manifestPath = path.join(app, 'src/data/galleryMediaManifest.json');
-const settings = {
-  longEdge: 4096,
-  quality: 90,
-  effort: 5,
-  format: 'webp',
-  algorithm: 'gallery-web-v1',
-};
-const args = new Set(process.argv.slice(2));
-if (
-  ![...args].every((arg) => ['--inspect', '--prepare', '--remove-raw'].includes(arg)) ||
-  args.has('--inspect') === args.has('--prepare') ||
-  (args.has('--remove-raw') && !args.has('--prepare'))
-) {
-  throw new Error('Use --inspect OR --prepare [--remove-raw]');
+const args = process.argv.slice(2);
+if (args.length !== 1 || !['--inspect', '--prepare'].includes(args[0])) {
+  throw new Error('Use --inspect OR --prepare; media conversion/removal is not supported');
 }
-sharp.concurrency(1);
-sharp.cache({ memory: 64, files: 0, items: 20 });
 const natural = new Intl.Collator('en', { numeric: true, sensitivity: 'variant' });
 const hash = (buffer) => createHash('sha256').update(buffer).digest('hex');
 async function walk(directory) {
-  const entries = await fs.readdir(directory, { withFileTypes: true });
   const result = [];
-  for (const entry of entries) {
+  for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
     const absolute = path.join(directory, entry.name);
     if (entry.isDirectory()) result.push(...(await walk(absolute)));
-    else if (/\.(jpe?g|png)$/i.test(entry.name)) result.push(absolute);
+    else if (entry.isFile() && /\.webp$/i.test(entry.name)) result.push(absolute);
+    else throw new Error(`Unsupported canonical entry (not ignored): ${absolute}`);
   }
   return result;
 }
-const files = (await walk(sourceRoot)).sort(natural.compare);
-const sources = [];
+const dimensions = (entries, prefix) => ({
+  minWidth: Math.min(...entries.map((entry) => entry[`${prefix}Width`])),
+  maxWidth: Math.max(...entries.map((entry) => entry[`${prefix}Width`])),
+  minHeight: Math.min(...entries.map((entry) => entry[`${prefix}Height`])),
+  maxHeight: Math.max(...entries.map((entry) => entry[`${prefix}Height`])),
+});
+const previousText = await fs.readFile(manifestPath, 'utf8');
+const previous = JSON.parse(previousText);
+const previousEntries = new Map();
+for (const entry of previous.entries) {
+  // Accept the former prefix only to preserve identity during the one-time move.
+  const destination = entry.destination.replace(/^web\//, '');
+  if (previousEntries.has(destination)) throw new Error(`Duplicate destination: ${destination}`);
+  previousEntries.set(destination, entry);
+}
+const categories = (await fs.readdir(galleryRoot, { withFileTypes: true })).map((entry) => {
+  if (!entry.isDirectory() || entry.name === 'catalogue') {
+    throw new Error(`Expected canonical category directory: ${entry.name}`);
+  }
+  return entry.name;
+});
+const files = (await walk(galleryRoot)).sort(natural.compare);
+if (!files.length) throw new Error('Canonical gallery is empty; manifest was not changed');
+const entries = [];
+const identities = new Set();
 for (const file of files) {
+  const destination = path.relative(galleryRoot, file).split(path.sep).join('/');
   const buffer = await fs.readFile(file);
-  const metadata = await sharp(buffer).metadata();
-  const source = path.relative(sourceRoot, file).split(path.sep).join('/');
-  if (!metadata.width || !metadata.height) throw new Error(`Missing dimensions: ${source}`);
-  sources.push({
+  const meta = await sharp(buffer).metadata();
+  if (!meta.width || !meta.height || meta.format !== 'webp') {
+    throw new Error(`Invalid prepared WebP: ${destination}`);
+  }
+  const destinationSha256 = hash(buffer);
+  const old = previousEntries.get(destination);
+  if (
+    old &&
+    (old.destinationSha256 !== destinationSha256 ||
+      old.destinationBytes !== buffer.length ||
+      old.destinationWidth !== meta.width ||
+      old.destinationHeight !== meta.height)
+  ) {
+    throw new Error(
+      `Canonical media changed; review its provenance before reindexing: ${destination}`,
+    );
+  }
+  // "source" is a logical ID, not a path to read. Keep existing IDs byte-for-byte.
+  const source = old?.source ?? destination.replace(/(\.(?:jpe?g|png))\.webp$/i, '$1');
+  if (identities.has(source)) throw new Error(`Logical identity collision: ${source}`);
+  if (source.split('/')[0] !== destination.split('/')[0]) {
+    throw new Error(`Category/identity mismatch: ${destination}`);
+  }
+  identities.add(source);
+  entries.push({
+    ...old,
     source,
-    sourceSha256: hash(buffer),
-    sourceBytes: buffer.length,
-    sourceWidth: metadata.width,
-    sourceHeight: metadata.height,
-    sourceOrientation: metadata.orientation ?? 1,
-    alpha: metadata.hasAlpha,
+    destination,
+    destinationSha256,
+    destinationBytes: buffer.length,
+    destinationWidth: meta.width,
+    destinationHeight: meta.height,
   });
 }
+entries.sort((a, b) => natural.compare(a.source, b.source));
 const groups = new Set(
-  sources.map(({ source }) => {
+  entries.map(({ source }) => {
     const [folder, ...parts] = source.split('/');
     return `${folder}/${parts.length === 1 ? 'file' : 'folder'}:${parts[0]}`;
   }),
 );
-const roots = sources.filter(({ source }) => source.split('/').length === 2).length;
-if (sources.length !== 741 || groups.size !== 137 || roots !== 41)
-  throw new Error('Source census changed; review classification before preparing');
-const sampleIndices = Array.from({ length: 12 }, (_, i) =>
-  Math.floor((i * (sources.length - 1)) / 11),
-);
-const dimensions = (entries, prefix) => ({
-  minWidth: Math.min(...entries.map((e) => e[`${prefix}Width`])),
-  maxWidth: Math.max(...entries.map((e) => e[`${prefix}Width`])),
-  minHeight: Math.min(...entries.map((e) => e[`${prefix}Height`])),
-  maxHeight: Math.max(...entries.map((e) => e[`${prefix}Height`])),
-});
-const sourceBytes = sources.reduce((sum, e) => sum + e.sourceBytes, 0);
-console.log(
-  JSON.stringify(
-    {
-      count: sources.length,
-      types: groups.size,
-      roots,
-      sourceBytes,
-      dimensions: dimensions(sources, 'source'),
-      samples: sampleIndices.map((i) => sources[i]),
-      settings,
-    },
-    null,
-    2,
-  ),
-);
-if (args.has('--prepare')) {
-  // Whole preparation is staged. Only verified, manifest-owned outputs can be replaced.
-  const free = await fs.statfs(app);
-  if (Number(free.bavail) * Number(free.bsize) < sourceBytes * 2 + 2_000_000_000)
-    throw new Error('Insufficient preparation/build disk headroom');
-  let previous;
-  try {
-    previous = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-  }
-  const previousEntries = new Map(
-    (previous?.entries ?? []).map((entry) => [entry.destination, entry]),
-  );
-  for (const entry of sources) {
-    const destination = `web/${entry.source}.webp`;
-    try {
-      const current = await fs.readFile(path.join(catalogueRoot, destination));
-      if (hash(current) !== previousEntries.get(destination)?.destinationSha256)
-        throw new Error(`Unowned/changed derivative: ${destination}`);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
-  }
-  const stage = await fs.mkdtemp(path.join(catalogueRoot, '.prepare-'));
-  const entries = [];
-  try {
-    // Sequential images + one libvips thread bound peak memory even for large sources.
-    for (const entry of sources) {
-      const destination = `web/${entry.source}.webp`;
-      const output = path.join(stage, destination);
-      await fs.mkdir(path.dirname(output), { recursive: true });
-      const source = path.join(sourceRoot, entry.source);
-      await sharp(source)
-        .autoOrient()
-        .resize(settings.longEdge, settings.longEdge, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: settings.quality, effort: settings.effort })
-        .toFile(output); // sharp strips metadata by default; never call keepMetadata/withMetadata.
-      const buffer = await fs.readFile(output);
-      const meta = await sharp(buffer).metadata();
-      if (
-        meta.exif ||
-        meta.xmp ||
-        meta.iptc ||
-        meta.icc ||
-        meta.orientation ||
-        meta.format !== 'webp' ||
-        Math.max(meta.width, meta.height) > settings.longEdge ||
-        meta.width * meta.height > entry.sourceWidth * entry.sourceHeight
-      )
-        throw new Error(`Invalid derivative: ${entry.source}`);
-      const sourceSha256After = hash(await fs.readFile(source));
-      if (sourceSha256After !== entry.sourceSha256)
-        throw new Error(`Original changed: ${entry.source}`);
-      entries.push({
-        ...entry,
-        sourceSha256After,
-        destination,
-        destinationSha256: hash(buffer),
-        destinationBytes: buffer.length,
-        destinationWidth: meta.width,
-        destinationHeight: meta.height,
-      });
-      if (entries.length % 25 === 0) console.log(`Prepared ${entries.length}/${sources.length}`);
-    }
-    const manifest = {
-      settings,
-      count: entries.length,
-      typeCount: groups.size,
-      rootCount: roots,
-      sourceBytes,
-      destinationBytes: entries.reduce((sum, e) => sum + e.destinationBytes, 0),
-      sourceDimensions: dimensions(entries, 'source'),
-      destinationDimensions: dimensions(entries, 'destination'),
-      samples: sampleIndices.map((i) => entries[i].source),
-      entries,
-    };
-    for (const entry of entries) {
-      const destination = path.join(catalogueRoot, entry.destination);
-      await fs.mkdir(path.dirname(destination), { recursive: true });
-      await fs.copyFile(path.join(stage, entry.destination), destination);
-      if (hash(await fs.readFile(destination)) !== entry.destinationSha256)
-        throw new Error(`Copy verification failed: ${entry.destination}`);
-    }
-    await fs.writeFile(`${manifestPath}.tmp`, `${JSON.stringify(manifest, null, 2)}\n`);
-    await fs.rename(`${manifestPath}.tmp`, manifestPath);
-    if (args.has('--remove-raw')) {
-      // Validate ALL former LOT-C raw copies before deleting ANY; never touch other assets.
-      const owned = [];
-      for (const entry of entries) {
-        const raw = path.join(catalogueRoot, entry.source);
-        try {
-          if (hash(await fs.readFile(raw)) !== entry.sourceSha256)
-            throw new Error(`Changed raw copy: ${entry.source}`);
-          owned.push(raw);
-        } catch (error) {
-          if (error.code !== 'ENOENT') throw error;
-        }
-      }
-      for (const file of owned) await fs.unlink(file);
-      console.log(`Removed ${owned.length} verified LOT-C raw copies`);
-    }
-    console.log(JSON.stringify({ ...manifest, entries: undefined }, null, 2));
-  } finally {
-    await fs.rm(stage, { recursive: true, force: true });
-  }
+const populated = new Set(entries.map(({ destination }) => destination.split('/')[0]));
+for (const category of categories) {
+  if (!populated.has(category)) throw new Error(`Empty category: ${category}`);
 }
+const sampleCount = Math.min(12, entries.length);
+const samples = Array.from(
+  { length: sampleCount },
+  (_, index) =>
+    entries[Math.floor((index * (entries.length - 1)) / Math.max(1, sampleCount - 1))].source,
+);
+// Historical source metadata is retained only for hash-verified existing entries.
+// New prepared files have no invented original dimensions, bytes or hashes.
+const hasSourceMetadata = entries.every(
+  (entry) => entry.sourceBytes && entry.sourceWidth && entry.sourceHeight,
+);
+const manifest = {
+  settings: previous.settings,
+  count: entries.length,
+  typeCount: groups.size,
+  rootCount: entries.filter(({ source }) => source.split('/').length === 2).length,
+  ...(hasSourceMetadata
+    ? {
+        sourceBytes: entries.reduce((sum, entry) => sum + entry.sourceBytes, 0),
+        sourceDimensions: dimensions(entries, 'source'),
+      }
+    : {}),
+  destinationBytes: entries.reduce((sum, entry) => sum + entry.destinationBytes, 0),
+  destinationDimensions: dimensions(entries, 'destination'),
+  samples,
+  entries,
+};
+if (args[0] === '--prepare') {
+  // Detect concurrent edits before replacing only the index, never the media.
+  if ((await fs.readFile(manifestPath, 'utf8')) !== previousText) {
+    throw new Error('Manifest changed during inventory; retry after review');
+  }
+  const temporary = `${manifestPath}.tmp`;
+  await fs.writeFile(temporary, `${JSON.stringify(manifest, null, 2)}\n`, { flag: 'wx' });
+  await fs.rename(temporary, manifestPath);
+}
+console.log(JSON.stringify({ ...manifest, categories, entries }, null, 2));

@@ -18,7 +18,7 @@
  *   - Semantic `<footer>`, `<nav>` for the sitemap, `<address>` for contact.
  *   - Social links open in a new tab with `rel="noopener noreferrer"`.
  *   - All icons have visually-hidden accessible labels (i18n-driven).
-  *   - Contact buttons have a distinct high-contrast keyboard focus outline.
+ *   - Contact buttons have a distinct high-contrast keyboard focus outline.
  *
  * Responsive (mobile-first):
  *   - V2-09: the three sections (Contact, Trajet depuis, Plan du site)
@@ -50,18 +50,22 @@ interface Props {
 
 const t = Astro.locals.t;
 const { flush = false } = Astro.props;
+const copyright = t('common.footer.copyright');
+const firstSentenceEnd = copyright.indexOf('. ');
+const copyrightSplit = firstSentenceEnd === -1 ? copyright.length : firstSentenceEnd + 1;
 
 // Contact link targets (kept here, not in i18n, since they are URLs).
 const contact = {
-  mail: 'mailto:contact@filing-broderies.fr',
-  adresse: 'https://maps.google.com/?q=Lyon+France',
-  instagram: 'https://www.instagram.com/',
-  linkedin: 'https://www.linkedin.com/',
+  mail: 'mailto:contact@filing.fr',
+  adresse: 'https://maps.app.goo.gl/Lv3RT9JYYH2KcvF9A',
+  instagram: 'https://www.instagram.com/filing_broderies/',
+  linkedin: 'https://www.linkedin.com/company/filing-broderies/',
 };
 
 const journey = {
-  gare: 'https://maps.google.com/?q=Gare+TGV+Lyon+Part-Dieu',
-  aeroport: 'https://maps.google.com/?q=A%C3%A9roport+et+Gare+TGV+Lyon+Saint-Exup%C3%A9ry',
+  gare: 'https://www.google.com/maps/dir/?api=1&origin=Gare%20Lyon%20Part-Dieu%2C%20France&destination=45.903903%2C4.8771092',
+  aeroport:
+    'https://www.google.com/maps/dir/?api=1&origin=A%C3%A9roport%20Lyon-Saint-Exup%C3%A9ry%2C%20France&destination=45.903903%2C4.8771092',
 };
 ---
 
@@ -90,10 +94,12 @@ const journey = {
           <li>
             <a
               class="footer__icon-link footer__icon-link--mail"
+              data-footer-email-trigger
+              data-hover-slide
               href={contact.mail}
               aria-label={t('common.footer.aria.mail')}
             >
-              <span class="footer__icon-frame" aria-hidden="true">
+              <span class="footer__icon-frame" data-hover-slide-content aria-hidden="true">
                 <img
                   class="footer__icon"
                   src={mailIcon.src}
@@ -109,12 +115,13 @@ const journey = {
           <li>
             <a
               class="footer__icon-link footer__icon-link--adresse"
+              data-hover-slide
               href={contact.adresse}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t('common.footer.aria.adresse')}
             >
-              <span class="footer__icon-frame" aria-hidden="true">
+              <span class="footer__icon-frame" data-hover-slide-content aria-hidden="true">
                 <img
                   class="footer__icon"
                   src={adresseIcon.src}
@@ -130,12 +137,13 @@ const journey = {
           <li>
             <a
               class="footer__icon-link footer__icon-link--instagram"
+              data-hover-slide
               href={contact.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t('common.footer.aria.instagram')}
             >
-              <span class="footer__icon-frame" aria-hidden="true">
+              <span class="footer__icon-frame" data-hover-slide-content aria-hidden="true">
                 <img
                   class="footer__icon"
                   src={instagramIcon.src}
@@ -151,12 +159,13 @@ const journey = {
           <li>
             <a
               class="footer__icon-link footer__icon-link--linkedin"
+              data-hover-slide
               href={contact.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t('common.footer.aria.linkedin')}
             >
-              <span class="footer__icon-frame" aria-hidden="true">
+              <span class="footer__icon-frame" data-hover-slide-content aria-hidden="true">
                 <img
                   class="footer__icon"
                   src={linkedinIcon.src}
@@ -170,6 +179,67 @@ const journey = {
             </a>
           </li>
         </ul>
+        <div
+          id="footer-email-popover"
+          class="footer__email-popover"
+          hidden
+          popover="manual"
+          role="dialog"
+          aria-label={t('common.footer.email.dialogLabel')}
+          data-copy-success={t('common.footer.email.copied')}
+          data-copy-manual={t('common.footer.email.manual')}
+        >
+          <button
+            type="button"
+            class="footer__email-action"
+            data-email-copy
+            aria-label={t('common.footer.email.copy')}
+            title={t('common.footer.email.copy')}
+          >
+            <span>contact@filing.fr</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <g class="footer__email-clipboard">
+                <rect x="8" y="4" width="12" height="16" rx="2"></rect>
+                <path d="M16 4V2H4v16h4"></path>
+              </g>
+              <path
+                class="footer__email-check"
+                d="m5 12 4 4L19 6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </button>
+          <a class="footer__email-action footer__email-send" href={contact.mail}>
+            <span>{t('common.footer.email.send')}</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+              focusable="false"><path d="M14 3h7v7M21 3 10 14M10 3H3v18h18v-7"></path></svg
+            >
+          </a>
+          <div data-email-manual hidden>
+            <label for="footer-email-address">{t('common.footer.email.address')}</label>
+            <input id="footer-email-address" type="text" value="contact@filing.fr" readonly />
+          </div>
+          <p
+            class="footer__email-status sr-only"
+            aria-live="polite"
+            aria-atomic="true"
+            data-email-status
+          >
+          </p>
+        </div>
       </section>
 
       <!-- 3. TRAJET DEPUIS -->
@@ -183,12 +253,14 @@ const journey = {
           <li class="footer__trajet-item">
             <a
               class="footer__icon-link footer__icon-link--access"
+              data-hover-slide
               href={journey.gare}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t('common.footer.aria.gare')}
+              title={t('common.footer.aria.gare')}
             >
-              <span class="footer__icon-frame" aria-hidden="true">
+              <span class="footer__icon-frame" data-hover-slide-content aria-hidden="true">
                 <img
                   class="footer__icon"
                   src={gareIcon.src}
@@ -205,12 +277,14 @@ const journey = {
           <li class="footer__trajet-item">
             <a
               class="footer__icon-link footer__icon-link--access"
+              data-hover-slide
               href={journey.aeroport}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t('common.footer.aria.aeroport')}
+              title={t('common.footer.aria.aeroport')}
             >
-              <span class="footer__icon-frame" aria-hidden="true">
+              <span class="footer__icon-frame" data-hover-slide-content aria-hidden="true">
                 <img
                   class="footer__icon"
                   src={aeroportIcon.src}
@@ -251,11 +325,160 @@ const journey = {
     </div>
 
     <!-- 5. Copyright -->
-    <p class="footer__copyright">{t('common.footer.copyright')}</p>
+    <p class="footer__copyright">
+      {copyright.slice(0, copyrightSplit)}{' '}
+      <a class="footer__legal-link" href="/mentions_legales">{t('common.footer.legalNotice')}</a>
+      {copyright.slice(copyrightSplit)}
+    </p>
   </div>
 </footer>
 
+<script>
+  import '../../scripts/footerEmailPopover';
+  import '../../scripts/footerLegalNavigation';
+</script>
+
 <style>
+  .footer__email-popover {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    width: 20rem;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid rgb(248 246 243 / 30%);
+    border-radius: 8px;
+    background: var(--color-footer);
+    color: var(--color-warm-white);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-sm);
+    text-align: left;
+  }
+  .footer__email-popover:not(:popover-open) {
+    display: none;
+  }
+  .footer__email-popover:popover-open {
+    /* Opacity leaves placement measurements and the fixed arrow unchanged. */
+    animation: footer-email-appear 200ms ease-out;
+  }
+  @keyframes footer-email-appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .footer__email-popover::before {
+    content: '';
+    /* Viewport positioning keeps the tip outside the scrolling content. */
+    position: fixed;
+    left: calc(var(--email-arrow-x) - 5px);
+    top: calc(var(--email-arrow-y) - 5px);
+    width: 10px;
+    height: 10px;
+    transform: rotate(45deg);
+    background: var(--color-footer);
+    border-right: 1px solid rgb(248 246 243 / 30%);
+    border-bottom: 1px solid rgb(248 246 243 / 30%);
+    pointer-events: none;
+  }
+  .footer__email-popover[data-placement='below']::before {
+    border: 0;
+    border-top: 1px solid rgb(248 246 243 / 30%);
+    border-left: 1px solid rgb(248 246 243 / 30%);
+  }
+  .footer__email-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    border: 1px solid rgb(248 246 243 / 50%);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    text-decoration: none;
+    text-align: left;
+  }
+  .footer__email-action > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .footer__email-action svg {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+  }
+  .footer__email-clipboard,
+  .footer__email-check {
+    transform-box: view-box;
+    transform-origin: center;
+    pointer-events: none;
+  }
+  .footer__email-clipboard {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .footer__email-check {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  [data-email-copy][data-copied='true'] .footer__email-clipboard,
+  [data-email-copy][data-copied='true'] .footer__email-check {
+    transition:
+      opacity 180ms ease-out,
+      transform 220ms ease-out;
+  }
+  [data-email-copy][data-copied='true'] .footer__email-clipboard {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  [data-email-copy][data-copied='true'] .footer__email-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .footer__email-send {
+    margin-top: 8px;
+    background: #fff;
+    color: var(--color-charcoal);
+  }
+  .footer__email-action:focus-visible,
+  .footer__email-popover input:focus-visible {
+    outline: 2px solid var(--color-brand-orange);
+    outline-offset: 2px;
+  }
+  .footer__email-popover label {
+    display: block;
+    margin-top: 12px;
+  }
+  .footer__email-popover input {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px;
+    background: var(--color-footer);
+    color: inherit;
+    border: 1px solid currentColor;
+    user-select: text;
+  }
+  .footer__email-status:not(.sr-only):not(:empty) {
+    margin-top: 12px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .footer__email-popover:popover-open {
+      animation: none;
+    }
+    [data-email-copy][data-copied='true'] .footer__email-clipboard,
+    [data-email-copy][data-copied='true'] .footer__email-check {
+      transition: none;
+    }
+  }
+
   .footer {
     background-color: var(--color-footer);
     color: var(--color-warm-white);
@@ -292,10 +515,14 @@ const journey = {
        V2-09: always stacked vertically (column direction on every
        breakpoint). Generous gap between the three sections. */
   .footer__columns {
+    --footer-section-gap: clamp(1.25rem, 2.5vw, 2rem);
+    --footer-heading-gap: 10px;
+    --footer-group-reserve: 17px;
+    --footer-transport-gap: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(1.25rem, 2.5vw, 2rem);
+    gap: var(--footer-section-gap);
     width: 100%;
   }
 
@@ -311,7 +538,7 @@ const journey = {
     letter-spacing: 0.25em;
     text-transform: uppercase;
     color: var(--color-brand-orange);
-    margin-bottom: 0.625rem;
+    margin-bottom: var(--footer-heading-gap);
     position: relative;
     width: min(100%, 32rem);
   }
@@ -333,6 +560,11 @@ const journey = {
       transparent
     );
     opacity: 0.75;
+  }
+
+  .footer__block--trajet > .footer__heading,
+  .footer__sitemap > .footer__heading {
+    inset-block-start: -6px;
   }
 
   .footer__heading-text {
@@ -360,8 +592,7 @@ const journey = {
     max-width: 100%;
     margin-inline: auto;
     /* Reserve room for the 1.5× zoom and focus ring without clipping. */
-    padding: clamp(1.25rem, 3vw, 1.5625rem);
-    padding-bottom: 17px;
+    padding: var(--footer-group-reserve) clamp(1.25rem, 3vw, 1.5625rem);
     background-color: transparent;
     box-shadow: var(--shadow-md);
   }
@@ -372,19 +603,15 @@ const journey = {
 
   .footer__icon-link {
     --footer-contact-hover-bg: var(--color-brand-orange);
+    --hover-slide-bg: var(--color-footer);
+    --hover-slide-hover-bg: var(--footer-contact-hover-bg);
+    --hover-slide-duration: var(--footer-contact-duration);
+    --hover-slide-scale: 1.5;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    position: relative;
     width: 52px;
     height: 52px;
-    overflow: hidden;
-    background-color: var(--color-footer);
-    border-radius: 0;
-    transition:
-      transform var(--footer-contact-duration) var(--ease-luxury),
-      border-radius var(--footer-contact-duration) var(--ease-luxury),
-      background-color var(--footer-contact-duration) var(--ease-luxury);
   }
 
   .footer__icon-link--instagram {
@@ -405,14 +632,6 @@ const journey = {
     filter: brightness(0) invert(1);
   }
 
-  .footer__icon-link:hover,
-  .footer__icon-link:focus-visible {
-    z-index: 1;
-    background-color: var(--footer-contact-hover-bg);
-    border-radius: 15px;
-    transform: scale(1.5);
-  }
-
   .footer__icon-link:focus-visible {
     outline: 2px solid var(--color-warm-white);
     outline-offset: 2px;
@@ -422,25 +641,6 @@ const journey = {
   .footer__icon-link--adresse:is(:hover, :focus-visible) .footer__icon,
   .footer__icon-link--access:is(:hover, :focus-visible) .footer__icon {
     filter: brightness(0);
-  }
-
-  .footer__icon-link:is(:hover, :focus-visible) .footer__icon-frame {
-    animation: footer-contact-slide-in var(--footer-contact-duration) var(--ease-luxury) both;
-  }
-
-  .footer__icon-link:active {
-    transform: scale(0.9);
-  }
-
-  @keyframes footer-contact-slide-in {
-    from {
-      transform: translateY(50px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
   }
 
   .footer__icon-frame {
@@ -472,9 +672,10 @@ const journey = {
     --footer-contact-duration: 0.3s;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--footer-transport-gap);
     align-items: center;
     width: 100%;
+    padding-block: var(--footer-group-reserve);
   }
   .footer__trajet-item {
     width: 100%;
@@ -482,9 +683,10 @@ const journey = {
     display: flex;
     justify-content: center;
     /* Reserve only the 1.03× zoom and focus ring. */
-    padding: 5px calc(1.5% + 4px);
+    padding: 0 calc(1.5% + 4px);
   }
   .footer__icon-link--access {
+    --hover-slide-scale: 1.03;
     flex: 0 0 auto;
     justify-content: flex-start;
     gap: clamp(6px, 1.5vw, 12px);
@@ -497,10 +699,6 @@ const journey = {
   }
   .footer__icon-link--access:is(:hover, :focus-visible) {
     color: #1a1a1a;
-    transform: scale(1.03);
-  }
-  .footer__icon-link--access:active {
-    transform: scale(0.9);
   }
   .footer__trajet-label {
     flex-shrink: 0;
@@ -512,6 +710,7 @@ const journey = {
 
   /* ---- Sitemap ---- */
   .footer__sitemap-list {
+    padding-block: var(--footer-group-reserve);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -534,6 +733,20 @@ const journey = {
   }
 
   /* ---- Copyright ---- */
+  .footer__legal-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 0.25rem;
+    color: var(--color-warm-white);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .footer__legal-link:focus-visible {
+    outline-color: var(--color-warm-white);
+  }
+
   .footer__copyright {
     margin-top: 0.5rem;
     font-size: var(--text-xs);
@@ -557,17 +770,8 @@ const journey = {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .footer__icon-link,
     .footer__sitemap-link {
       transition: none;
-    }
-
-    .footer__icon-link:is(:hover, :focus-visible, :active) {
-      transform: none;
-    }
-
-    .footer__icon-link:is(:hover, :focus-visible) .footer__icon-frame {
-      animation: none;
     }
   }
 </style>

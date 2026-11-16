@@ -1,21 +1,135 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import type { PresentationComposition, PresentationGroup } from '../../data/presentationMedia';
 
 export interface Props {
   images: ImageMetadata[];
   variant?: 'atelier' | 'precision';
+  layout?: 'editorial' | 'compact';
+  composition?: PresentationComposition;
   class?: string;
 }
-const { images, variant = 'atelier', class: className } = Astro.props;
+const { images, variant = 'atelier', layout = 'editorial', composition, class: className } = Astro.props;
+const t = Astro.locals.t;
 const pairs = Array.from({ length: Math.ceil(images.length / 2) }, (_, i) =>
   images.slice(i * 2, i * 2 + 2),
 );
+const rows = composition?.compact ?? pairs.map((pair) => pair.length);
+if (composition && (rows.some((count) => !Number.isInteger(count) || count < 2) ||
+  rows.reduce((sum, count) => sum + count, 0) !== images.length ||
+  composition.desktopGroups.length !== images.length)) {
+  throw new Error('AtelierPresentation requires complete rows covering every photograph.');
+}
+// Every dimension is a * rootWidth + b * gap. Keeping both terms accounts for
+// gaps at every nesting level, without rounding rows or measuring in the browser.
+type Length = [number, number];
+interface MeasuredGroup {
+  index?: number;
+  axis?: 'h' | 'v';
+  children: MeasuredGroup[];
+  ratio: number;
+  gap: number;
+}
+const leaves: number[] = [];
+const measure = (group: PresentationGroup): MeasuredGroup => {
+  if (typeof group === 'number') {
+    if (!Number.isInteger(group) || !images[group]) throw new Error('Invalid atelier photograph index.');
+    leaves.push(group);
+    return { index: group, children: [], ratio: images[group].width / images[group].height, gap: 0 };
+  }
+  if (!group.children.length) throw new Error('Atelier groups cannot be empty.');
+  const children = group.children.map(measure);
+  const ratio = group.axis === 'h'
+    ? children.reduce((sum, child) => sum + child.ratio, 0)
+    : 1 / children.reduce((sum, child) => sum + 1 / child.ratio, 0);
+  const gap = group.axis === 'h'
+    ? children.reduce((sum, child) => sum + child.gap, children.length - 1)
+    : ratio * children.reduce((sum, child) => sum + child.gap / child.ratio, 1 - children.length);
+  return { axis: group.axis, children, ratio, gap };
+};
+const desktopTree: MeasuredGroup = layout === 'compact' ? measure(composition?.desktop ?? {
+  axis: 'v', children: pairs.map((pair, index) => ({ axis: 'h', children: pair.map((_, i) => index * 2 + i) })),
+}) : { children: [], ratio: 1, gap: 0 };
+if (layout === 'compact' && (leaves.length !== images.length || leaves.some((index, position) => index !== position))) {
+  throw new Error('Atelier composition must contain every photograph once, in source order.');
+}
+const add = (a: Length, b: Length): Length => [a[0] + b[0], a[1] + b[1]];
+const heightFor = (width: Length, group: MeasuredGroup): Length =>
+  [width[0] / group.ratio, (width[1] - group.gap) / group.ratio];
+const desktopBoxes: { x: Length; y: Length; width: Length }[] = [];
+const place = (group: MeasuredGroup, x: Length, y: Length, width: Length): void => {
+  if (group.index !== undefined) {
+    desktopBoxes[group.index] = { x, y, width };
+    return;
+  }
+  const height = heightFor(width, group);
+  for (const child of group.children) {
+    const childWidth: Length = group.axis === 'h'
+      ? [height[0] * child.ratio, height[1] * child.ratio + child.gap]
+      : width;
+    place(child, x, y, childWidth);
+    if (group.axis === 'h') x = add(x, add(childWidth, [0, 1]));
+    else y = add(y, add(heightFor(childWidth, child), [0, 1]));
+  }
+};
+place(desktopTree, [0, 0], [0, 0], [1, 0]);
+const cssLength = ([width, gap]: Length): string =>
+  `calc(${width * 100}% ${gap < 0 ? '-' : '+'} var(--atelier-gap) * ${Math.abs(gap)})`;
+const desktopHeight = cssLength(heightFor([1, 0], desktopTree));
+const placement = (index: number, counts: readonly number[]) => {
+  let start = 0;
+  const row = counts.findIndex((count) => {
+    if (index < start + count) return true;
+    start += count;
+    return false;
+  });
+  const count = counts[row];
+  const total = images.slice(start, start + count).reduce((sum, image) => sum + image.width / image.height, 0);
+  const fraction = (images[index].width / images[index].height) / total;
+  // Reserve subpixel slack for flex wrapping; proportional flex-grow restores it.
+  const basis = Math.floor(fraction * 1e10) / 1e10;
+  return { row, fraction, basis: `calc((100% - var(--atelier-gap) * ${count - 1} - 0.1px) * ${basis})` };
+};
 ---
 
-<div class:list={['atelier-presentation', `atelier-presentation--${variant}`, className]}>
+<div
+  class:list={['atelier-presentation', `atelier-presentation--${variant}`, `atelier-presentation--${layout}`, className]}
+  data-atelier-presentation={layout === 'compact' ? '' : undefined}
+  data-open-label={layout === 'compact' ? t('common.gallery.openLabel') : undefined}
+  data-dialog-label={layout === 'compact' ? t('common.gallery.dialogLabel') : undefined}
+  data-close-label={layout === 'compact' ? t('common.gallery.closeLabel') : undefined}
+  style={layout === 'compact' ? `--desktop-height: ${desktopHeight};` : undefined}
+>
   {
-    pairs.map((pair) => (
+    layout === 'compact' ? images.map((image, index) => {
+      const compact = placement(index, rows);
+      const desktop = desktopBoxes[index];
+      // top percentages resolve against board height, unlike left/width and
+      // the spacer's padding. Convert the width-relative affine coordinate.
+      const desktopTop: Length = [desktop.y[0] * desktopTree.ratio, desktop.y[1] + desktop.y[0] * desktopTree.gap];
+      return (
+      <figure
+        class="atelier-presentation__frame"
+        data-atelier-frame
+        data-row-compact={compact.row}
+        data-row-desktop={composition?.desktopGroups[index] ?? compact.row}
+        data-full-src={image.src}
+        style={`--basis-compact: ${compact.basis}; --grow-compact: ${compact.fraction}; --desktop-x: ${cssLength(desktop.x)}; --desktop-y: ${cssLength(desktopTop)}; --desktop-width: ${cssLength(desktop.width)};`}
+      >
+        <div data-atelier-motion>
+          <Image
+            src={image}
+            alt=""
+            widths={[480, 800, 1200, 1600]}
+            sizes={`(max-width: 1023px) ${Math.ceil(compact.fraction * 100)}vw, (max-width: 1280px) ${Math.ceil(desktop.width[0] * 100)}vw, ${Math.ceil(desktop.width[0] * 1280 + Math.max(0, desktop.width[1]) * 16)}px`}
+            loading="lazy"
+            class="atelier-presentation__image"
+          />
+        </div>
+      </figure>
+    );
+    }) : pairs.map((pair) => (
       <div class="atelier-presentation__pair">
         {pair.map((image) => (
           <figure
@@ -38,6 +152,10 @@ const pairs = Array.from({ length: Math.ceil(images.length / 2) }, (_, i) =>
     ))
   }
 </div>
+
+<script>
+  import '../../scripts/atelierPresentation';
+</script>
 
 <style>
   .atelier-presentation {
@@ -74,12 +192,56 @@ const pairs = Array.from({ length: Math.ceil(images.length / 2) }, (_, i) =>
     background: color-mix(in srgb, var(--color-brand-orange) 3%, var(--color-warm-white));
     padding: clamp(0.75rem, 2vw, 2rem);
   }
+  .atelier-presentation--compact {
+    --atelier-gap: clamp(0.5rem, 1vw, 1rem);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--atelier-gap);
+    align-items: flex-start;
+    max-width: min(var(--content-max), 1280px);
+    margin-inline: auto;
+  }
+  .atelier-presentation--compact .atelier-presentation__frame {
+    flex: var(--grow-compact) 0 var(--basis-compact);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  .atelier-presentation--compact .atelier-presentation__frame::before {
+    content: none;
+  }
+  @media (max-width: 639px) {
+    .atelier-presentation--compact .atelier-presentation__frame[role='button'] {
+      cursor: zoom-in;
+    }
+    .atelier-presentation--compact .atelier-presentation__frame:focus-visible {
+      outline: 2px solid var(--color-brand-orange);
+      outline-offset: 3px;
+    }
+  }
   @media (min-width: 768px) {
     .atelier-presentation__pair {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
   }
   @media (min-width: 1024px) {
+    .atelier-presentation--compact {
+      position: relative;
+      display: block;
+      width: 100%;
+    }
+    .atelier-presentation--compact::after {
+      content: '';
+      display: block;
+      padding-top: var(--desktop-height);
+    }
+    .atelier-presentation--compact .atelier-presentation__frame {
+      position: absolute;
+      left: var(--desktop-x);
+      top: var(--desktop-y);
+      width: var(--desktop-width);
+    }
     .atelier-presentation__pair {
       grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
     }
@@ -89,5 +251,55 @@ const pairs = Array.from({ length: Math.ceil(images.length / 2) }, (_, i) =>
     .atelier-presentation__pair > :last-child {
       margin-top: var(--space-section);
     }
+  }
+
+  :global(.atelier-viewer) {
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 60px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(16px, env(safe-area-inset-left, 0px));
+    background: rgb(20 19 18 / 96%);
+    color: white;
+    overflow: hidden;
+  }
+  :global(.atelier-viewer[open]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  :global(.atelier-viewer::backdrop) {
+    background: rgb(20 19 18 / 96%);
+  }
+  :global(.atelier-viewer__image) {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+  :global(.atelier-viewer__close) {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    right: max(8px, env(safe-area-inset-right, 0px));
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgb(255 255 255 / 40%);
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  :global(.atelier-viewer__close:focus-visible) {
+    outline: 2px solid white;
+    outline-offset: 3px;
   }
 </style>

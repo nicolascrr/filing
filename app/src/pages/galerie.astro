@@ -2,26 +2,17 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/sections/PageHero.astro';
 import BigCarousel from '../components/ui/BigCarousel.astro';
-import SmallCarousel from '../components/ui/SmallCarousel.astro';
 import CatalogueMasonry from '../components/ui/CatalogueMasonry.astro';
 import { galleryManifest } from '../server/galleryCatalogue';
-import pageHeroGalerie from '../assets/photos/hero/showroom-lead.jpg';
+import pageHeroGalerie from '../assets/hero/showroom-lead.jpg';
 
 const t = Astro.locals.t;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 const manifest = await galleryManifest(Astro.url.searchParams, Astro.locals.locale, t);
 const strings = {
-  overviewHeading: t('ui.gallery.overviewHeading'),
   reset: t('ui.gallery.reset'),
-  emptyCoiling: t('ui.gallery.emptyCoiling'),
-  sampleCount: t('ui.gallery.sampleCount'),
-  imageCount: t('ui.gallery.imageCount'),
-  viewCategory: t('ui.gallery.viewCategory'),
-  zoomIn: t('ui.photo.zoomIn'),
-  zoomOut: t('ui.photo.zoomOut'),
-  resetZoom: t('ui.photo.reset'),
-  previousSample: t('ui.photo.previousSample'),
-  nextSample: t('ui.photo.nextSample'),
+  empty: t('ui.gallery.empty'),
+  zoomHelp: t('ui.photo.zoomHelp'),
   loading: t('ui.photo.loading'),
   error: t('ui.photo.error'),
   retry: t('ui.photo.retry'),
@@ -32,46 +23,45 @@ const strings = {
   sample: t('ui.gallery.sample'),
 };
 const json = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
-const masonry = manifest.mode === 'overview' || manifest.cards.length >= 11;
 const category = manifest.categories.find((c) => c.key === manifest.category);
 ---
 
 <BaseLayout title={`${t('galerie.hero.title')} — ${t('common.brand.name')}`}>
   <Hero image={pageHeroGalerie} title={t('galerie.hero.title')} />
-  <section
-    class="content-max catalogue"
-    data-gallery-root
-    data-reveal-group
-    data-reveal-start="top 80%"
-    aria-label={t('galerie.selector.label')}
-  >
+  <section class="content-max catalogue" data-gallery-root aria-label={t('galerie.selector.label')}>
     <nav class="catalogue-nav" aria-label={t('galerie.selector.label')}>
-      <button type="button" data-gallery-reset aria-pressed={!category}
-        >{t('ui.gallery.allCategories')}</button
+      <button type="button" data-gallery-reset data-hover-slide aria-pressed={!category}
+        ><span data-category-arrival
+          ><span data-category-click
+            ><span data-hover-slide-content>{t('ui.gallery.allCategories')}</span></span
+          ></span
+        ></button
       >
       {
         manifest.categories.map((c) => (
           <button
             type="button"
             data-gallery-category={c.key}
+            data-hover-slide
             aria-pressed={category?.key === c.key}
           >
-            {c.label}
-            <span>{c.typeCount}</span>
+            <span data-category-arrival>
+              <span data-category-click>
+                <span data-hover-slide-content>{c.label}</span>
+              </span>
+            </span>
           </button>
         ))
       }
     </nav>
-    <header class="catalogue-heading">
-      <h2 data-gallery-heading data-reveal-title>{category?.label ?? strings.overviewHeading}</h2>
-      <button type="button" data-gallery-reset>{strings.reset}</button>
+    <header class="catalogue-heading" hidden={!category}>
+      <h2 data-gallery-heading>{category?.label}</h2>
     </header>
     <p data-gallery-status role="status" aria-live="polite">
-      {category?.typeCount === 0 ? strings.emptyCoiling : ''}
+      {category?.typeCount === 0 ? strings.empty : ''}
     </p>
     <button type="button" data-gallery-retry hidden>{strings.retry}</button>
-    <CatalogueMasonry cards={masonry ? manifest.cards : []} hidden={!masonry} />
-    <SmallCarousel cards={!masonry ? manifest.cards : []} hidden={masonry} />
+    <CatalogueMasonry cards={manifest.cards} />
     <BigCarousel strings={strings} />
     <script is:inline type="application/json" data-gallery-manifest set:html={json(manifest)} />
     <script is:inline type="application/json" data-gallery-strings set:html={json(strings)} />
@@ -80,16 +70,17 @@ const category = manifest.categories.find((c) => c.key === manifest.category);
 
 <style>
   .catalogue {
-    max-width: 1800px;
-    padding-block: var(--space-section);
+    max-width: none;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+    padding-block: clamp(1rem, 2vw, 2rem) var(--space-section);
   }
   .catalogue-nav {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.25rem 0.8rem;
-    padding-block: 1.5rem;
-    border-block: 1px solid color-mix(in srgb, var(--color-charcoal) 18%, transparent);
+    padding-block: 0.5rem;
+    margin-bottom: clamp(1.5rem, 3vw, 3rem);
   }
   .catalogue button {
     min-height: 44px;
@@ -97,20 +88,31 @@ const category = manifest.categories.find((c) => c.key === manifest.category);
     cursor: pointer;
   }
   .catalogue-nav button {
+    --hover-slide-duration: 0.3s;
+    min-width: 44px;
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    background: none;
     border: 0;
     color: var(--color-charcoal);
   }
-  .catalogue-nav button span {
-    font-size: 0.7rem;
-    opacity: 0.55;
-  }
   .catalogue-nav button[aria-pressed='true'] {
-    color: var(--color-gold-text);
-    box-shadow: inset 0 -1px var(--color-gold);
+    --hover-slide-bg: var(--color-brand-orange);
+    --hover-slide-radius: var(--radius-sm);
+    color: var(--color-charcoal);
+  }
+  .catalogue-nav [data-category-arrival],
+  .catalogue-nav [data-category-click],
+  .catalogue-nav [data-hover-slide-content] {
+    display: inline-block;
+  }
+  /* A focused category must be readable immediately, even during a hover. */
+  .catalogue-nav button:focus-visible [data-hover-slide-content] {
+    animation: none;
+  }
+  .catalogue-nav button:focus-visible {
+    outline: 2px solid var(--color-charcoal);
+    outline-offset: 3px;
   }
   .catalogue-heading {
     display: flex;
@@ -118,12 +120,15 @@ const category = manifest.categories.find((c) => c.key === manifest.category);
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-block: 3rem 1rem;
+    margin-block: 1.5rem 1rem;
   }
   .catalogue-heading h2 {
     font-family: var(--font-heading);
     font-size: var(--text-2xl);
     text-wrap: balance;
+  }
+  .catalogue-heading[hidden] {
+    display: none;
   }
   .catalogue-heading button {
     background: none;

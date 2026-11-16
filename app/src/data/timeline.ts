@@ -1,24 +1,13 @@
-/**
- * Timeline milestones — Fil'ing Broderies
- *
- * Static data for the timeline rework. Replace the deliberately neutral
- * descriptions and preview images here when the validated history is supplied.
- *
- * The `textKey` field holds an i18n key (resolved via `t()` in Timeline.astro)
- * so the caption is translated per locale. The actual translations live in
- * `accueil.timeline.milestones.*` in the locale JSON files.
- */
-
 import type { ImageMetadata } from 'astro';
-import tl1994 from '../content/Médias/Accueil/1994.JPG';
-import tl1997 from '../content/Médias/Accueil/1997.JPG';
-import tl2001 from '../content/Médias/Accueil/2001.JPG';
-import tl2005 from '../content/Médias/Accueil/2005.JPG';
-import tl2011 from '../content/Médias/Accueil/2011.JPG';
-import tl2013 from '../content/Médias/Accueil/2013.png';
-import tl2015 from '../content/Médias/Accueil/2015.jpg';
-import tl2023 from '../content/Médias/Accueil/2023.jpeg';
-import tl2024 from '../content/Médias/Accueil/2024.jpg';
+import tl1994 from '../assets/timeline/1994.JPG';
+import tl1997 from '../assets/timeline/1997.JPG';
+import tl2001 from '../assets/timeline/2001.JPG';
+import tl2005 from '../assets/timeline/2005.JPG';
+import tl2011 from '../assets/timeline/2011.JPG';
+import tl2013 from '../assets/timeline/2013.png';
+import tl2015 from '../assets/timeline/2015.jpg';
+import tl2023 from '../assets/timeline/2023.jpeg';
+import tl2024 from '../assets/timeline/2024.jpg';
 
 export interface TimelineMilestone {
   /** Milestone year (display label). */
@@ -31,7 +20,6 @@ export interface TimelineMilestone {
   imageAltKey: string;
 }
 
-/** Replace the content/images below with approved historical material when available. */
 export const timelineMilestones: TimelineMilestone[] = [
   {
     year: '1994',

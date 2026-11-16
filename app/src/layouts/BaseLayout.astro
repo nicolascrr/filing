@@ -13,7 +13,6 @@
  *     GSAP islands should initialise/re-init their animations here.
  *   - `astro:before-swap` → fires before a view-transition swap.
  *     GSAP islands should call `context.revert()` here to clean up.
- *   Menu and Footer chrome will be added in Phase 1 (US-07 / US-08).
  */
 
 import { ClientRouter } from 'astro:transitions';
@@ -51,6 +50,27 @@ const siteDescription = description ?? t('common.meta.description');
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      // Cold loads only: SPA preparation keeps the outgoing document visible.
+      if (!window.__filingHeroBootstrap) {
+        window.__filingHeroBootstrap = true;
+        document.documentElement.dataset.heroGate = 'pending';
+        const releaseTimer = () => window.clearTimeout(timer);
+        const timer = window.setTimeout(() => {
+          document.removeEventListener('filing:hero-gate-open', releaseTimer);
+          if (document.documentElement.dataset.heroGate === 'pending') {
+            document.documentElement.dataset.heroGate = 'fallback';
+            document.querySelectorAll('[data-hero-fallback]').forEach((image) => {
+              image.setAttribute('src', image.getAttribute('data-src'));
+            });
+            document.querySelectorAll('video[data-hero-media]').forEach((video) => {
+              video.setAttribute('data-media-failed', 'true');
+            });
+          }
+        }, 8000);
+        document.addEventListener('filing:hero-gate-open', releaseTimer, { once: true });
+      }
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     <title>{siteTitle}</title>
@@ -67,6 +87,11 @@ const siteDescription = description ?? t('common.meta.description');
 
     <!-- Astro view transitions (Barba.js dropped per D2) -->
     <ClientRouter />
+    <script
+      is:inline
+      src="https://cdn.counter.dev/script.js"
+      data-id="c1ad3a09-88b6-4f86-8859-67c4ab353436"
+      data-utcoffset="1"></script>
   </head>
   <body>
     <script is:inline>

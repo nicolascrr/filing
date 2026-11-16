@@ -10,7 +10,7 @@
  *   2. Intro — 2 centered paragraphs (bold segments parsed).
  *   3. AtelierPresentation — six production photographs.
  *   4. Facts — 4 ValueBlocks in a 2×2 grid (stacked on mobile).
- *   5. AtelierPresentation — six finishing photographs, precision variant.
+ *   5. AtelierPresentation — six finishing photographs, compact layout.
  *   6. Finishing — 2 centered paragraphs (bold segments parsed).
  *
  * Footer is rendered by BaseLayout — not re-added here.
@@ -23,10 +23,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { parseBold } from '../i18n/t';
 import Hero from '../components/sections/PageHero.astro';
 import AtelierPresentation from '../components/ui/AtelierPresentation.astro';
-import { productionMedia, finishingMedia } from '../data/presentationMedia';
+import { productionMedia, finishingMedia, presentationCompositions } from '../data/presentationMedia';
 import ValueBlock from '../components/ui/ValueBlock.astro';
 
-import pageHeroProduction from '../assets/photos/hero/production-lead.jpg';
+import pageHeroProduction from '../assets/hero/production-lead.jpg';
 // ValueBlock logos — original supplied SVG pictos.
 import iconSurface from '../assets/icons/superficie.svg';
 import iconPreparation from '../assets/icons/finition.svg';
@@ -56,12 +56,16 @@ const t = Astro.locals.t;
     </div>
   </section>
 
-  <!-- 3. Noninteractive production presentation -->
+  <!-- 3. Production rows; enlargement on mobile only -->
   <section
     class="section-gallery section-gallery--wide"
     aria-label={t('common.sectionLabels.gallery')}
   >
-    <AtelierPresentation images={productionMedia} />
+    <AtelierPresentation
+      images={productionMedia}
+      layout="compact"
+      composition={presentationCompositions.production}
+    />
   </section>
 
   <!-- 4. Facts — 4 ValueBlocks in a 2×2 grid (stacked on mobile) -->
@@ -72,6 +76,7 @@ const t = Astro.locals.t;
         <ValueBlock
           logo={iconSurface}
           logoVariant="orange"
+          logoScale={1.3}
           title={t('production.facts.surface.title')}
           description={t('production.facts.surface.description')}
         />
@@ -88,6 +93,8 @@ const t = Astro.locals.t;
         <ValueBlock
           logo={iconTetes}
           logoVariant="orange"
+          logoScale={1.2}
+          class="production-machine"
           title={t('production.facts.tetes.title')}
           description={t('production.facts.tetes.description')}
         />
@@ -103,12 +110,16 @@ const t = Astro.locals.t;
     </div>
   </section>
 
-  <!-- 5. Noninteractive finishing presentation -->
+  <!-- 5. Finishing rows; enlargement on mobile only -->
   <section
-    class="section-carousel section-carousel--wide"
+    class="section-gallery section-gallery--wide"
     aria-label={t('common.sectionLabels.carousel')}
   >
-    <AtelierPresentation images={finishingMedia} variant="precision" />
+    <AtelierPresentation
+      images={finishingMedia}
+      layout="compact"
+      composition={presentationCompositions.finishing}
+    />
   </section>
 
   <!-- 6. Finishing — 2 centered paragraphs with bold segments -->
@@ -133,16 +144,25 @@ const t = Astro.locals.t;
   .section-intro,
   .section-gallery,
   .section-facts,
-  .section-carousel,
   .section-finishing {
     padding-block: var(--space-section);
   }
 
   /* Galleries deliberately extend beyond the standard editorial measure. */
-  .section-gallery--wide,
-  .section-carousel--wide {
+  .section-gallery--wide {
     width: 100%;
     padding-inline: var(--content-padding);
+  }
+
+  .section-gallery--wide {
+    padding-block: clamp(1rem, 2vw, 2rem);
+  }
+
+  .section-facts :global(.production-machine .value-block__logo) {
+    height: calc((var(--value-icon-size) - 1.3rem) * 0.9);
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
   }
 
   /* ---- Intro ---- */

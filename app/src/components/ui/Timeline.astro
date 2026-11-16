@@ -54,7 +54,9 @@ const regionLabel = t('accueil.timeline.regionLabel');
             data-timeline-previous
             aria-label={t('ui.timeline.previous')}
           >
-            ←
+            <svg viewBox="0 0 28 16" aria-hidden="true" focusable="false">
+              <path d="M27 8H2m6-6L2 8l6 6" />
+            </svg>
           </button>
           <input
             class="timeline__range"
@@ -76,7 +78,9 @@ const regionLabel = t('accueil.timeline.regionLabel');
             data-timeline-next
             aria-label={t('ui.timeline.next')}
           >
-            →
+            <svg viewBox="0 0 28 16" aria-hidden="true" focusable="false">
+              <path d="M1 8h25m-6-6 6 6-6 6" />
+            </svg>
           </button>
         </div>
       </div>
@@ -98,6 +102,36 @@ const regionLabel = t('accueil.timeline.regionLabel');
     min-width: 44px;
     min-height: 44px;
     font-size: 1.5rem;
+    color: var(--color-charcoal);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: color 0.35s ease;
+  }
+  .timeline__arrow svg {
+    display: block;
+    width: 28px;
+    height: 16px;
+    margin: auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+    transition: transform 0.35s ease;
+  }
+  .timeline__arrow:not(:disabled):is(:hover, :focus-visible) {
+    color: var(--color-brand-orange);
+  }
+  .timeline__arrow:focus-visible {
+    outline: none;
+  }
+  .timeline__arrow[data-timeline-previous]:not(:disabled):is(:hover, :focus-visible) svg {
+    transform: translateX(-3px);
+  }
+  .timeline__arrow[data-timeline-next]:not(:disabled):is(:hover, :focus-visible) svg {
+    transform: translateX(3px);
   }
   .timeline__arrow:disabled {
     opacity: 0.35;
@@ -107,6 +141,9 @@ const regionLabel = t('accueil.timeline.regionLabel');
     min-width: 4ch;
     font-family: var(--font-heading);
     font-size: var(--text-sm);
+    color: color-mix(in srgb, var(--color-charcoal) 75%, transparent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
   }
   .timeline__range {
     appearance: none;
@@ -118,30 +155,36 @@ const regionLabel = t('accueil.timeline.regionLabel');
     touch-action: none;
   }
   .timeline__range::-webkit-slider-runnable-track {
-    height: 2px;
-    background: var(--color-charcoal);
+    height: 3px;
+    background:
+      conic-gradient(from 45deg at 0 50%, #a77c4e 0deg 90deg, transparent 90deg) left center / 8px 3px no-repeat,
+      linear-gradient(to bottom, #a79c8b, var(--color-charcoal) 50%, #a77c4e) right center / calc(100% - 8px) 3px no-repeat;
   }
   .timeline__range::-moz-range-track {
-    height: 2px;
-    background: var(--color-charcoal);
+    height: 3px;
+    background:
+      conic-gradient(from 45deg at 0 50%, #a77c4e 0deg 90deg, transparent 90deg) left center / 8px 3px no-repeat,
+      linear-gradient(to bottom, #a79c8b, var(--color-charcoal) 50%, #a77c4e) right center / calc(100% - 8px) 3px no-repeat;
   }
   .timeline__range::-webkit-slider-thumb {
     appearance: none;
-    width: 18px;
-    height: 18px;
-    margin-top: -8px;
-    border: 3px solid var(--color-warm-white);
+    box-sizing: border-box;
+    width: 14px;
+    height: 26px;
+    margin-top: -11.5px;
+    border: 2px solid var(--color-brand-orange);
     border-radius: 50%;
-    background: var(--color-brand-orange);
-    box-shadow: 0 0 0 1px var(--color-charcoal);
+    background: transparent;
+    box-shadow: 0 0 0 2px var(--color-warm-white);
   }
   .timeline__range::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    border: 3px solid var(--color-warm-white);
+    box-sizing: border-box;
+    width: 14px;
+    height: 26px;
+    border: 2px solid var(--color-brand-orange);
     border-radius: 50%;
-    background: var(--color-brand-orange);
-    box-shadow: 0 0 0 1px var(--color-charcoal);
+    background: transparent;
+    box-shadow: 0 0 0 2px var(--color-warm-white);
   }
   .timeline {
     /* Change collapsed/expanded dimensions here. */
@@ -403,6 +446,13 @@ const regionLabel = t('accueil.timeline.regionLabel');
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .timeline__arrow,
+    .timeline__arrow svg {
+      transition: none;
+    }
+    .timeline__arrow:not(:disabled):is(:hover, :focus-visible) svg {
+      transform: none;
+    }
     .timeline__stage {
       min-height: 0;
     }
@@ -505,6 +555,7 @@ const regionLabel = t('accueil.timeline.regionLabel');
     let lastRangeScroll: number | null = null;
     let restoreRangeScrollBehavior: Cleanup | null = null;
     let syncingScroll = false;
+    let mobileTouchInteraction = false;
     const originalScrollSnap = list.style.scrollSnapType;
     let scrollFrame = 0;
     let refreshFrame = 0;
@@ -772,9 +823,12 @@ const regionLabel = t('accueil.timeline.regionLabel');
       const onWindowContextLoss = (): void => {
         if (document.hidden) onRangeEnd();
       };
-      const onListInteraction = (): void => {
+      const onListInteraction = (event: Event): void => {
+        if (event instanceof PointerEvent && event.pointerType === 'touch' &&
+          window.matchMedia('(max-width: 639px)').matches) mobileTouchInteraction = true;
         if (inputOwner !== 'range') stopListAnimation();
       };
+      const onListKey = (): void => { mobileTouchInteraction = false; };
       const onRangeKey = (event: KeyboardEvent): void => {
         if (!range) return;
         let value = Number(range.value);
@@ -813,9 +867,17 @@ const regionLabel = t('accueil.timeline.regionLabel');
 
       const onFocus = (event: FocusEvent): void => {
         const card = event.currentTarget as HTMLElement;
+        // Touch focus must not start a scrollLeft tween against native panning.
+        // Keyboard focus retains its existing explicit navigation behavior.
+        if (window.matchMedia('(max-width: 639px)').matches &&
+          (mobileTouchInteraction || !card.matches(':focus-visible'))) return;
         navigateTo(Number(card.dataset.index), 'focus');
       };
-      const onTouchEnd = (): void => activateNearestCard('touch');
+      const onTouchEnd = (): void => {
+        mobileTouchInteraction = false;
+        activateNearestCard('touch');
+      };
+      const onTouchCancel = (): void => { mobileTouchInteraction = false; };
       const onNativeScroll = (): void => {
         if (desktopAccordion || inputOwner || syncingScroll) return;
         window.cancelAnimationFrame(scrollFrame);
@@ -840,8 +902,10 @@ const regionLabel = t('accueil.timeline.regionLabel');
       });
       list.addEventListener('scroll', onNativeScroll, { passive: true });
       list.addEventListener('pointerup', onTouchEnd, { passive: true });
+      list.addEventListener('pointercancel', onTouchCancel, { passive: true });
       list.addEventListener('pointerdown', onListInteraction, { passive: true });
       list.addEventListener('wheel', onListInteraction, { passive: true });
+      list.addEventListener('keydown', onListKey);
       range?.addEventListener('pointerdown', onRangeStart);
       range?.addEventListener('keydown', onRangeKey);
       window.addEventListener('pointerup', onRangeEnd, true);
@@ -942,8 +1006,10 @@ const regionLabel = t('accueil.timeline.regionLabel');
         });
         list.removeEventListener('scroll', onNativeScroll);
         list.removeEventListener('pointerup', onTouchEnd);
+        list.removeEventListener('pointercancel', onTouchCancel);
         list.removeEventListener('pointerdown', onListInteraction);
         list.removeEventListener('wheel', onListInteraction);
+        list.removeEventListener('keydown', onListKey);
         range?.removeEventListener('pointerdown', onRangeStart);
         range?.removeEventListener('keydown', onRangeKey);
         window.removeEventListener('pointerup', onRangeEnd, true);

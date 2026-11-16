@@ -3,7 +3,7 @@ import { navItems } from '../../data/nav';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 
 const t = Astro.locals.t;
-const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
 ---
 
 <div class="nav-block" data-thread-menu>
@@ -59,16 +59,18 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
         <ol class="menu__grid">
           {
             navItems.map((item) => (
-              <li>
+              <li data-route={item.href}>
                 <a
                   href={item.href}
                   class="menu__link"
                   data-menu-link
                   aria-current={
-                    (item.href.replace(/\/$/, '') || '/') === currentPath ? 'page' : undefined
+                    (item.href.replace(/\/+$/, '') || '/') === currentPath ? 'page' : undefined
                   }
                 >
-                  <span class="menu__title"><span class="menu__label">{t(item.labelKey)}</span></span>
+                  <span class="menu__title">
+                    <span class="menu__label">{t(item.labelKey)}</span>
+                  </span>
                 </a>
               </li>
             ))
@@ -165,6 +167,34 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
   }
+  /* Stitch only the straight runs; keep the connector and rounded joins intact.
+     The path's dash properties remain exclusively owned by GSAP's reveal. */
+  @supports (mask-image: linear-gradient(#000, #000)) {
+    .menu__filets {
+      mask-image:
+        linear-gradient(#000, #000), linear-gradient(#000, #000), linear-gradient(#000, #000),
+        linear-gradient(#000, #000), linear-gradient(#000, #000),
+        repeating-linear-gradient(to right, #000 0 5px, transparent 5px 9px),
+        repeating-linear-gradient(to bottom, #000 0 5px, transparent 5px 9px);
+      mask-size:
+        100% var(--menu-thread-gap),
+        var(--menu-radius) var(--menu-radius),
+        var(--menu-radius) var(--menu-radius),
+        var(--menu-radius) var(--menu-radius),
+        var(--menu-radius) var(--menu-radius),
+        calc(100% - 2 * var(--menu-radius)) 100%,
+        100% calc(100% - var(--menu-thread-gap) - 2 * var(--menu-radius));
+      mask-position:
+        top,
+        bottom left,
+        bottom right,
+        left 0 top var(--menu-thread-gap),
+        right 0 top var(--menu-thread-gap),
+        center,
+        left 0 bottom var(--menu-radius);
+      mask-repeat: no-repeat;
+    }
+  }
   .menu__grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -173,10 +203,14 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
   }
   .menu__grid li {
     min-width: 0;
-    border-bottom: 1px solid rgb(248 246 243 / 18%);
+    border-bottom: none;
     transition: background-color var(--menu-hover-duration) var(--ease-luxury);
   }
-  .menu__grid li:is(:hover, :focus-within) {
+  .menu__grid li:is([data-route='/'], [data-route='/creation']) {
+    border-bottom: 1px solid rgb(248 246 243 / 18%);
+  }
+  .menu__grid li:hover,
+  .menu__grid li:has(> a[aria-current='page']) {
     background-color: var(--color-brand-orange);
   }
   .menu__link {
@@ -195,11 +229,9 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     text-decoration: none;
     transition: color var(--menu-hover-duration) var(--ease-luxury);
   }
-  .menu__link[aria-current='page'] {
-    color: var(--color-brand-orange);
-  }
-  .menu__grid li:is(:hover, :focus-within) .menu__link {
-    color: var(--color-charcoal);
+  .menu__grid li:hover .menu__link,
+  .menu__grid li:has(> a[aria-current='page']) .menu__link {
+    color: #000;
   }
   .menu__title {
     min-width: 0;
@@ -210,19 +242,27 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     transform-origin: left center;
     transition: transform var(--menu-hover-duration) var(--ease-luxury);
   }
-  .menu__grid li:is(:hover, :focus-within) .menu__label {
+  .menu__grid
+    li:not(:has(> .menu__link[aria-current='page'])):is(:hover, :has(> .menu__link:focus-visible))
+    .menu__label {
     transform: scale(1.03);
   }
   /* Same upward slide as the footer's Uiverse contact icons. */
-  .menu__grid li:is(:hover, :focus-within) .menu__title {
+  .menu__grid
+    li:not(:has(> .menu__link[aria-current='page'])):is(:hover, :has(> .menu__link:focus-visible))
+    .menu__title {
     animation: menu-title-slide-in var(--menu-hover-duration) var(--ease-luxury) both;
   }
   .menu__link:focus-visible {
     outline: 2px solid var(--color-warm-white);
     outline-offset: -4px;
   }
-  .menu__grid li .menu__link:active .menu__label {
+  .menu__grid li .menu__link:not([aria-current='page']):active .menu__label {
     transform: scale(0.98);
+  }
+  .menu__link[aria-current='page'] .menu__label {
+    transform: none;
+    transition: none;
   }
   @keyframes menu-title-slide-in {
     from {
@@ -261,11 +301,11 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     .menu__label {
       transition: none;
     }
-    .menu__grid li:is(:hover, :focus-within) .menu__label,
+    .menu__grid li:is(:hover, :has(> .menu__link:focus-visible)) .menu__label,
     .menu__grid li .menu__link:active .menu__label {
       transform: none;
     }
-    .menu__grid li:is(:hover, :focus-within) .menu__title {
+    .menu__grid li:is(:hover, :has(> .menu__link:focus-visible)) .menu__title {
       animation: none;
     }
   }
@@ -285,6 +325,19 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     const threadSvg = root.querySelector<SVGSVGElement>('.menu__filets');
     const thread = root.querySelector<SVGPathElement>('[data-menu-thread]');
     const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-menu-link]'));
+    const syncCurrentPage = (): void => {
+      const normalizePath = (url: URL): string => url.pathname.replace(/\/+$/, '') || '/';
+      const currentPath = normalizePath(new URL(window.location.href));
+      let matched = false;
+      links.forEach((link) => {
+        const active = !matched && normalizePath(new URL(link.href)) === currentPath;
+        if (active) {
+          link.setAttribute('aria-current', 'page');
+          matched = true;
+        } else link.removeAttribute('aria-current');
+      });
+    };
+    syncCurrentPage();
     const tiles = Array.from(root.querySelectorAll<HTMLElement>('.menu__grid > li'));
     if (!trigger || !spool || !stage || !panel || !threadSvg || !thread) return () => undefined;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -294,6 +347,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     let disposed = false;
     let animation: gsap.core.Timeline | null = null;
     let rotation: gsap.core.Tween | null = null;
+    let restoringLanguageFocus = false;
     const updateGeometry = (): void => {
       if (disposed) return;
       const styles = getComputedStyle(root);
@@ -324,11 +378,11 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       thread.setAttribute(
         'd',
         `M${width - 20} 0V12Q${width - 20} ${gap} ${joinX} ${joinY}` +
-        `A${arc} ${arc} 0 0 0 ${cx} ${top}` +
-        `H${radius}A${arc} ${arc} 0 0 0 ${inset} ${gap + radius}` +
-        `V${gap + height - radius}A${arc} ${arc} 0 0 0 ${radius} ${bottom}` +
-        `H${cx}A${arc} ${arc} 0 0 0 ${right} ${gap + height - radius}` +
-        `V${cy}A${arc} ${arc} 0 0 0 ${endX} ${endY}`,
+          `A${arc} ${arc} 0 0 0 ${cx} ${top}` +
+          `H${radius}A${arc} ${arc} 0 0 0 ${inset} ${gap + radius}` +
+          `V${gap + height - radius}A${arc} ${arc} 0 0 0 ${radius} ${bottom}` +
+          `H${cx}A${arc} ${arc} 0 0 0 ${right} ${gap + height - radius}` +
+          `V${cy}A${arc} ${arc} 0 0 0 ${endX} ${endY}`,
       );
     };
     const geometryObserver = new ResizeObserver(updateGeometry);
@@ -404,6 +458,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       if (restoreFocus) trigger.focus({ preventScroll: true });
     };
     const open = (): void => {
+      syncCurrentPage();
       contrast();
       const run = ++generation;
       animation?.kill();
@@ -430,11 +485,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
               setState('open');
             },
           })
-          .to(
-            stage,
-            { opacity: 1, duration: reduced.matches ? 0 : 0.28, ease: 'power3.out' },
-            0,
-          )
+          .to(stage, { opacity: 1, duration: reduced.matches ? 0 : 0.28, ease: 'power3.out' }, 0)
           .to(thread, { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out' }, 0)
           .fromTo(
             tiles,
@@ -456,7 +507,17 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       else close();
     };
     const onEnter = (): void => {
-      if (state === 'closed') rotate(90, 0.6);
+      if (state === 'closed' && !restoringLanguageFocus) rotate(90, 0.6);
+    };
+    const onLanguageFocus = (): void => {
+      // Focus events are synchronous: suppress only this restoration, not the
+      // next deliberate keyboard focus or pointer hover.
+      restoringLanguageFocus = true;
+      try {
+        trigger.focus({ preventScroll: true });
+      } finally {
+        restoringLanguageFocus = false;
+      }
     };
     const onLeave = (): void => {
       if (state === 'closed') rotate(0, 0.45);
@@ -500,8 +561,12 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       root.dataset.onDark = String(
         heroes.some((hero) => {
           const heroBounds = hero.getBoundingClientRect();
-          return x >= heroBounds.left && x < heroBounds.right &&
-            y >= heroBounds.top && y < heroBounds.bottom;
+          return (
+            x >= heroBounds.left &&
+            x < heroBounds.right &&
+            y >= heroBounds.top &&
+            y < heroBounds.bottom
+          );
         }),
       );
     };
@@ -536,12 +601,14 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     trigger.addEventListener('mouseenter', onEnter);
     trigger.addEventListener('mouseleave', onLeave);
     trigger.addEventListener('focus', onEnter);
+    trigger.addEventListener('site:menu-language-focus', onLanguageFocus);
     trigger.addEventListener('blur', onLeave);
     document.addEventListener('click', onOutside);
     document.addEventListener('keydown', onKey);
     document.addEventListener('site:lightbox-state', onLightbox);
     window.addEventListener('scroll', contrast, { passive: true });
     window.addEventListener('resize', contrast);
+    window.addEventListener('popstate', syncCurrentPage);
     reduced.addEventListener('change', onMotionChange);
     links.forEach((link) => link.addEventListener('click', onLink));
     return () => {
@@ -557,12 +624,14 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
       trigger.removeEventListener('mouseenter', onEnter);
       trigger.removeEventListener('mouseleave', onLeave);
       trigger.removeEventListener('focus', onEnter);
+      trigger.removeEventListener('site:menu-language-focus', onLanguageFocus);
       trigger.removeEventListener('blur', onLeave);
       document.removeEventListener('click', onOutside);
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('site:lightbox-state', onLightbox);
       window.removeEventListener('scroll', contrast);
       window.removeEventListener('resize', contrast);
+      window.removeEventListener('popstate', syncCurrentPage);
       reduced.removeEventListener('change', onMotionChange);
       links.forEach((link) => link.removeEventListener('click', onLink));
     };

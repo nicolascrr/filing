@@ -1,0 +1,72 @@
+[
+  {
+    "destination": "src/assets/hero/creation-lead.jpg",
+    "sha256": "f4db98fd79565db6d7c6598c17ed09f5e09ecdfab7a76b74071e42d00cb99141"
+  },
+  {
+    "destination": "src/assets/hero/production-lead.jpg",
+    "sha256": "8a89cc906e5221c36dd3f7d708d1cde5c5f8fa2f0bcf2b4af90d5745e6667180"
+  },
+  {
+    "destination": "src/assets/hero/showroom-lead.jpg",
+    "sha256": "03812cc2264bdf5250780a50d63d498a74f237bac5af1cca5cb410ea0dbe202e"
+  },
+  {
+    "destination": "src/assets/hero/hero-video.mp4",
+    "sha256": "3b5582521ab578aabfae4d253eae7a71fb68088613c14488d89b0fde3d4cb4cb"
+  },
+  {
+    "destination": "src/assets/hero/hero-video-mobile.mp4",
+    "sha256": "17cd0ce951e74917e0302fa4476df5632e7e356ae945ab36cdf3e30c505e7e10"
+  },
+  {
+    "destination": "src/assets/hero/hero-poster.JPG",
+    "original": "src/content/Médias/Showroom/Broderie/Traditionnelle/P1000499.JPG",
+    "sha256": "78a59522b1de56b0b97f308025a773b32f00b614260668b421f4f6d0707fd94c"
+  },
+  {
+    "destination": "src/assets/timeline/1994.JPG",
+    "original": "src/content/Médias/Accueil/1994.JPG",
+    "sha256": "ec1c8866be830f2769e3519adb4ce48b8fa16f5cae90f5e653f589c2aca56481"
+  },
+  {
+    "destination": "src/assets/timeline/1997.JPG",
+    "original": "src/content/Médias/Accueil/1997.JPG",
+    "sha256": "359f2f451f737de0250ea60bcbce78a783f31cfc075afcc4c956126379bb5888"
+  },
+  {
+    "destination": "src/assets/timeline/2001.JPG",
+    "original": "src/content/Médias/Accueil/2001.JPG",
+    "sha256": "b729439645889af27e4f5ccb0e1177fcc52b1fc61b5128d77fa267492b202d36"
+  },
+  {
+    "destination": "src/assets/timeline/2005.JPG",
+    "original": "src/content/Médias/Accueil/2005.JPG",
+    "sha256": "9dd99fa9804bbfa9baf55931d435211d7419ae0c93928cff384b66e1516c1a16"
+  },
+  {
+    "destination": "src/assets/timeline/2011.JPG",
+    "original": "src/content/Médias/Accueil/2011.JPG",
+    "sha256": "5503cdb6844984796c301c8461d5446a28090b546fa22093ea5f9f1f7beed183"
+  },
+  {
+    "destination": "src/assets/timeline/2013.png",
+    "original": "src/content/Médias/Accueil/2013.png",
+    "sha256": "92a18b3b9677a2017fe72fab37d0366207c1d4dfb924588af1b88e9fc4ada37f"
+  },
+  {
+    "destination": "src/assets/timeline/2015.jpg",
+    "original": "src/content/Médias/Accueil/2015.jpg",
+    "sha256": "b86893dae497e1b1d58eff4f67390aea193b718fb377d7a922232ddb43af9d6f"
+  },
+  {
+    "destination": "src/assets/timeline/2023.jpeg",
+    "original": "src/content/Médias/Accueil/2023.jpeg",
+    "sha256": "472ceb03332a3ff0a6a09fb416079af6c4fb27c1319d4387b3e04fcd6da71a3d"
+  },
+  {
+    "destination": "src/assets/timeline/2024.jpg",
+    "original": "src/content/Médias/Accueil/2024.jpg",
+    "sha256": "69aedc4490b4bedb6437c6bf8d03003d83704e779422464f3b9371064a45062c"
+  }
+]

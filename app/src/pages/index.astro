@@ -1,21 +1,4 @@
 ---
-/**
- * Accueil (Home) — US-12 hero + US-13 body sections
- *
- * Composes the fullscreen video hero and the static body sections:
- *   1. Intro (2 centered paragraphs, bold segments parsed)
- *   2. Services (2 ImageCards → Création / Production)
- *   3. Expertise (centered paragraph, bold segments parsed)
- *   4. Timeline (interactive milestones)
- *   5. Company values (3 ValueBlocks)
- *   6. Teaser (full-width call-to-action → Galerie)
- *
- * All visible text comes from i18n `t()`. Images use placeholders except for
- * the real ValueBlock pictos. `--content-max` is respected on every
- * section except the hero and the teaser (both explicitly full-width).
- * Vertical rhythm uses `--space-section`.
- */
-
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { parseBold } from '../i18n/t';
 import Hero from '../components/sections/accueil/Hero.astro';
@@ -30,19 +13,14 @@ import imageCardProduction from '../assets/photos/home/bouton-production.jpg';
 import teaserImg from '../assets/teaser.png';
 // ValueBlock logos — original supplied SVG pictos.
 import iconFabrication from '../assets/icons/made_in_france.svg';
-// No approved orange patrimoine picto exists yet; use the requested temporary
-// made-in-France reference so the illustrated grid remains visually coherent.
-import iconPatrimoine from '../assets/icons/made_in_france.svg';
+import iconPatrimoine from '../assets/icons/EPV_logo.svg';
 import iconValeurs from '../assets/icons/valeurs.svg';
 
 const t = Astro.locals.t;
 ---
 
 <BaseLayout footerFlush>
-  <!-- US-12: fullscreen video hero (full-width, breaks content-max) -->
   <Hero />
-
-  <!-- US-13: body sections -->
 
   <div class="home-thread-region" data-home-thread-region>
     <HomeScrollStroke />
@@ -114,7 +92,18 @@ const t = Astro.locals.t;
     <Timeline milestones={timelineMilestones} />
   </section>
 
-  <!-- 5. Company values — 3 ValueBlocks -->
+  <!-- 5. Teaser — full-width call-to-action (breaks content-max) -->
+  <Teaser
+    title={t('accueil.teaser.title')}
+    url="/galerie"
+    image={teaserImg}
+    objectPosition="center top"
+    mobileObjectPosition="center top"
+    animateTitle
+    titleRevealPace="slow"
+  />
+
+  <!-- 6. Company values — 3 ValueBlocks -->
   <section class="content-max section-values" aria-label={t('common.sectionLabels.values')}>
     <h2 class="sr-only">{t('common.sectionLabels.values')}</h2>
     <div class="section-values__grid">
@@ -146,15 +135,6 @@ const t = Astro.locals.t;
       </div>
     </div>
   </section>
-
-  <!-- 6. Teaser — full-width call-to-action (breaks content-max) -->
-  <Teaser
-    title={t('accueil.teaser.title')}
-    url="/galerie"
-    image={teaserImg}
-    objectPosition="center bottom"
-    mobileObjectPosition="center bottom"
-  />
 </BaseLayout>
 
 <style>

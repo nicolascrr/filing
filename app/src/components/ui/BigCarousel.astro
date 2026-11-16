@@ -12,36 +12,24 @@ const { strings: s } = Astro.props;
     role="dialog"
     aria-modal="true"
     aria-labelledby="catalogue-viewer-title"
+    aria-describedby="catalogue-zoom-help"
     tabindex="-1"
   >
     <div class="catalogue-viewer__panel">
-      <header>
-        <h2 id="catalogue-viewer-title" data-viewer-title>{s.sample}</h2><button
-          type="button"
-          data-viewer-close
-          aria-label={s.close}>×</button
-        >
-      </header>
+      <h2 class="sr-only" id="catalogue-viewer-title" data-viewer-title>{s.sample}</h2>
+      <p class="sr-only" id="catalogue-zoom-help">{s.zoomHelp}</p>
+      <button type="button" data-viewer-close aria-label={s.close}>×</button>
       <div class="catalogue-viewer__stage" data-viewer-stage>
         <img data-viewer-photo alt="" draggable="false" />
       </div>
-      <p data-viewer-status role="status" aria-live="polite"></p>
-      <div class="catalogue-viewer__thumbnails" data-viewer-thumbnails></div>
       <div class="catalogue-viewer__controls">
         <button type="button" data-viewer-prev aria-label={s.prev}>←</button>
-        <span data-viewer-count></span>
         <button type="button" data-viewer-next aria-label={s.next}>→</button>
-        <button type="button" data-viewer-zoom-in aria-label={s.zoomIn}>+</button>
-        <button type="button" data-viewer-zoom-out aria-label={s.zoomOut}>−</button>
-        <button type="button" data-viewer-zoom-reset>{s.resetZoom}</button>
+      </div>
+      <div class="catalogue-viewer__feedback">
+        <p data-viewer-status role="status" aria-live="polite"></p>
         <button type="button" data-viewer-retry hidden>{s.retry}</button>
       </div>
-      <div class="catalogue-viewer__types">
-        <button type="button" data-viewer-type-prev aria-label={s.previousSample}>←</button>
-        <label><span class="sr-only">{s.type}</span><select data-viewer-types></select></label>
-        <button type="button" data-viewer-type-next aria-label={s.nextSample}>→</button>
-      </div>
-      <button type="button" data-viewer-category hidden></button>
     </div>
   </div>
 </template>
@@ -50,126 +38,112 @@ const { strings: s } = Astro.props;
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: rgba(18, 18, 18, 0.92);
+    background: rgb(18 18 18 / 94%);
     color: #f8f5ef;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    padding: 0.5rem;
     overscroll-behavior: contain;
   }
   .catalogue-viewer__panel {
-    width: min(100%, 1400px);
-    max-height: 100dvh;
+    width: min(100%, 1600px);
+    max-height: calc(100dvh - 1rem);
     display: flex;
     flex-direction: column;
-    padding: 0.5rem;
+    position: relative;
   }
-  .catalogue-viewer header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  .catalogue-viewer h2 {
-    color: inherit;
-    font-family: var(--font-heading);
-    font-size: clamp(1rem, 2vw, 1.5rem);
-  }
-  .catalogue-viewer button,
-  .catalogue-viewer select {
+  .catalogue-viewer button {
     min-height: 44px;
     min-width: 44px;
-    padding: 0.6rem 0.9rem;
-    border: 1px solid rgba(248, 245, 239, 0.3);
+    padding: 0.6rem;
+    border: 0;
     background: transparent;
     color: inherit;
     cursor: pointer;
+    font-size: 1.5rem;
   }
-  .catalogue-viewer button:focus-visible,
-  .catalogue-viewer select:focus-visible {
+  .catalogue-viewer button:focus-visible {
     outline: 2px solid var(--color-gold);
-    outline-offset: 3px;
+    outline-offset: -2px;
   }
   .catalogue-viewer button:disabled {
-    opacity: 0.35;
+    opacity: 0.25;
     cursor: default;
   }
-  .catalogue-viewer option {
-    background: #222;
-    color: #f8f5ef;
+  .catalogue-viewer [data-viewer-close] {
+    align-self: flex-end;
+    flex-shrink: 0;
   }
   .catalogue-viewer__stage {
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    height: 60dvh;
-    min-height: 120px;
+    height: calc(100dvh - 170px);
+    min-height: 0;
+    flex-shrink: 1;
     touch-action: none;
-    margin-block: 1rem;
   }
   .catalogue-viewer__stage img {
+    width: auto;
+    height: auto;
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
     user-select: none;
-    will-change: transform;
+    cursor: zoom-in;
   }
-  .catalogue-viewer__thumbnails {
+  .catalogue-viewer__stage[data-zoomed] img {
+    cursor: grab;
+  }
+  .catalogue-viewer__controls {
     display: flex;
+    flex-shrink: 0;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 1rem;
+    margin-top: 12px;
   }
-  .catalogue-viewer__thumbnails button {
-    padding: 0;
-    width: 64px;
-    height: 48px;
+  .catalogue-viewer__feedback {
+    text-align: center;
+    min-height: 1.5rem;
+    flex-shrink: 0;
   }
-  .catalogue-viewer__thumbnails img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .catalogue-viewer__feedback p:empty {
+    display: none;
   }
-  .catalogue-viewer__thumbnails [aria-current='true'] {
-    border-color: var(--color-gold);
+  .catalogue-viewer [data-viewer-retry] {
+    font-size: 1rem;
   }
   .catalogue-viewer[aria-busy='true'] [data-viewer-photo] {
     opacity: 0.5;
   }
-  @media (max-width: 639px) {
-    .catalogue-viewer__thumbnails {
-      display: none;
-    }
-  }
-  .catalogue-viewer__controls,
-  .catalogue-viewer__types {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    margin-block: 0.35rem;
-  }
-  .catalogue-viewer__types label {
-    max-width: 65%;
-  }
-  .catalogue-viewer select {
-    max-width: 100%;
-  }
   .catalogue-viewer [hidden] {
     display: none !important;
   }
-  [data-viewer-status] {
-    text-align: center;
-    min-height: 1.5em;
+  @media (max-width: 1023px) {
+    .catalogue-viewer__stage img {
+      height: 100%;
+    }
   }
-  @media (max-width: 639px) {
-    .catalogue-viewer {
-      padding: 0.5rem;
+  @media (min-width: 1024px) {
+    .catalogue-viewer__controls {
+      margin-top: 0;
     }
     .catalogue-viewer__stage {
-      height: 50dvh;
+      height: calc(100dvh - 100px);
+      margin-inline: 60px;
+    }
+    .catalogue-viewer__controls button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .catalogue-viewer [data-viewer-prev] {
+      left: 0;
+    }
+    .catalogue-viewer [data-viewer-next] {
+      right: 0;
     }
   }
 </style>

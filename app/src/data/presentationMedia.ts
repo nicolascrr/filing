@@ -38,4 +38,46 @@ export const productionMedia = [
   production4,
   production5,
 ];
-export const finishingMedia = [cloutage, collage, coupe, nouage, reparation, teinture];
+export const finishingMedia = [cloutage, collage, coupe, reparation, nouage, teinture];
+
+export type PresentationGroup = number | {
+  axis: 'h' | 'v';
+  children: readonly PresentationGroup[];
+};
+
+export interface PresentationComposition {
+  desktop: PresentationGroup;
+  desktopGroups: readonly number[];
+  compact: readonly number[];
+}
+
+export const presentationCompositions = {
+  creation: {
+    desktop: { axis: 'h', children: [
+      { axis: 'v', children: [0, { axis: 'h', children: [1, 2] }] },
+      { axis: 'v', children: [
+        { axis: 'h', children: [3, 4] },
+        { axis: 'h', children: [5, 6, 7] },
+      ] },
+    ] },
+    desktopGroups: [0, 0, 0, 1, 1, 2, 2, 2],
+    compact: [2, 2, 2, 2],
+  },
+  production: {
+    desktop: { axis: 'v', children: [
+      { axis: 'h', children: [0, 1] },
+      { axis: 'h', children: [2, 3, 4, 5] },
+    ] },
+    desktopGroups: [0, 0, 1, 1, 1, 1],
+    compact: [2, 2, 2],
+  },
+  finishing: {
+    desktop: { axis: 'h', children: [
+      { axis: 'v', children: [0, 1] },
+      2,
+      { axis: 'v', children: [3, 4, 5] },
+    ] },
+    desktopGroups: [0, 0, 1, 2, 2, 2],
+    compact: [2, 2, 2],
+  },
+} as const satisfies Record<'creation' | 'production' | 'finishing', PresentationComposition>;

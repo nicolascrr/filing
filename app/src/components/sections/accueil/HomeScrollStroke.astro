@@ -30,41 +30,38 @@
   .home-scroll-stroke-route {
     --home-thread-top-offset: calc(
       var(--space-section) + clamp(1.625rem, 3vw, 3rem) + clamp(1rem, 2vw, 2rem) +
-        clamp(2rem, 4vw, 4rem) + 30px
+        clamp(2rem, 4vw, 4rem)
     );
 
     position: absolute;
     display: none;
     z-index: var(--home-thread-decorative-layer, 0);
-    inset: 0;
+    inset: var(--home-thread-top-offset) 0 0;
     overflow: visible;
     pointer-events: none;
-  }
-
-  .home-scroll-stroke-route[data-thread-active] {
-    display: block;
   }
 
   .home-scroll-stroke {
     position: absolute;
     /* Scale and shift the source geometry so its first and last path points
        align with the route wrapper's bounds. */
-    top: 0;
-    left: 0;
+    top: -17.326275%;
+    left: 82%;
     display: block;
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: 101.944865%;
     max-width: none;
-    transform: none;
+    transform: translateX(-68.591941%);
+  }
+
+  @media (min-width: 640px) {
+    .home-scroll-stroke-route {
+      display: block;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-scroll-stroke-route[data-thread-active] {
-      display: none;
-    }
-  }
-  @media (max-width: 767px) {
-    .home-scroll-stroke-route[data-thread-active] {
+    .home-scroll-stroke-route {
       display: none;
     }
   }
@@ -88,133 +85,348 @@
     const terminalContent = region?.querySelector<HTMLElement>(
       '[data-home-thread-terminal-content]',
     );
-    if (!region || !end || !path || !svg || !route || !terminalContent) return;
+    const production = region?.querySelector<HTMLElement>(
+      '.section-services a[href="/production"]',
+    );
+    if (!region || !end || !path || !svg || !route || !terminalContent || !production)
+      return;
+
+    const routeSource = path.getAttribute('d');
+    if (!routeSource) return;
+
+    const routePrefix = routeSource.split('C1201.28 2077.83')[0];
+    if (!routePrefix) return;
+
+    const draw = { pathLength: 0.5 };
+    const measurePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const measure = (d: string): number => {
+      measurePath.setAttribute('d', d);
+      return measurePath.getTotalLength();
+    };
+    const prefixLength = measure(routePrefix);
+    let oldMiddleLength = 0;
+    let newMiddleLength = 0;
+    let oldLength = prefixLength;
+    let newLength = prefixLength;
+    let middleTiming: ReadonlyArray<readonly [number, number]> = [];
+
+    const middleDistance = (elapsed: number): number => {
+      const time = Number.isFinite(elapsed)
+        ? Math.max(0, Math.min(oldMiddleLength, elapsed))
+        : 0;
+      const linear = oldMiddleLength > 0 ? (time * newMiddleLength) / oldMiddleLength : 0;
+      if (middleTiming.length < 2) return linear;
+      let low = 0;
+      let high = middleTiming.length - 1;
+      while (high - low > 1) {
+        const mid = (low + high) >>> 1;
+        if (middleTiming[mid][0] <= time) low = mid;
+        else high = mid;
+      }
+      const [t0, s0] = middleTiming[low];
+      const [t1, s1] = middleTiming[high];
+      const distance = s0 + ((time - t0) * (s1 - s0)) / (t1 - t0);
+      return Number.isFinite(distance) ? distance : linear;
+    };
+
+    // Build an inverse time-density table at refresh, not while drawing. True
+    // lobe passages get a constant slower speed; cosine shoulders avoid jumps.
+    const updateMiddleTiming = (
+      baselineLength: number,
+      loops: ReadonlyArray<readonly [number, number]>,
+    ): void => {
+      middleTiming = [];
+      if (![baselineLength, oldMiddleLength, newMiddleLength].every(
+        (length) => Number.isFinite(length) && length > 0,
+      )) return;
+      const count = 2048;
+      const step = newMiddleLength / count;
+      const shoulder = Math.min(24, newMiddleLength / 100);
+      const boundary = Math.min(80, newMiddleLength / 20);
+      const weights = Array.from({ length: count + 1 }, (_, i) => {
+        // Make the first/last interpolation intervals exactly unit-speed.
+        if (i <= 1 || i >= count - 1) return { loop: 0, anchor: 1 };
+        const s = i * step;
+        let loop = 0;
+        for (const [start, end] of loops) {
+          const outside = Math.max(start - s, s - end, 0);
+          if (outside < shoulder) {
+            loop = Math.max(loop, (1 + Math.cos((Math.PI * outside) / shoulder)) / 2);
+          }
+        }
+        const edge = Math.min(s, newMiddleLength - s);
+        const anchor = edge < boundary
+          ? (1 + Math.cos((Math.PI * edge) / boundary)) / 2
+          : 0;
+        return { loop, anchor };
+      });
+      let loopIntegral = 0;
+      let anchorIntegral = 0;
+      for (let i = 1; i <= count; i++) {
+        loopIntegral += ((weights[i - 1].loop + weights[i].loop) * step) / 2;
+        anchorIntegral += ((weights[i - 1].anchor + weights[i].anchor) * step) / 2;
+      }
+      const freeLength = newMiddleLength - loopIntegral - anchorIntegral;
+      if (freeLength <= 0) return;
+      const minimumDensity = oldMiddleLength / (1.7 * baselineLength);
+      let loopDensity = 0;
+      let linkDensity = 0;
+      for (const beta of [0.75, 0.8]) {
+        loopDensity = oldMiddleLength / (beta * baselineLength);
+        linkDensity = (oldMiddleLength - loopDensity * loopIntegral - anchorIntegral) / freeLength;
+        if (linkDensity >= minimumDensity) break;
+      }
+      if (!Number.isFinite(linkDensity) || linkDensity < minimumDensity) return;
+      const density = weights.map(({ loop, anchor }) =>
+        linkDensity + (loopDensity - linkDensity) * loop + (1 - linkDensity) * anchor,
+      );
+      if (density.some((value) => !Number.isFinite(value) || value <= 0)) return;
+      const table: Array<readonly [number, number]> = [[0, 0]];
+      let time = 0;
+      for (let i = 1; i <= count; i++) {
+        time += ((density[i - 1] + density[i]) * step) / 2;
+        table.push([time, i * step]);
+      }
+      // The solved integral is Mref; pin its final sample against rounding drift.
+      table[count] = [oldMiddleLength, newMiddleLength];
+      middleTiming = table;
+    };
+
+    const render = (): void => {
+      const originalDistance = (2 * draw.pathLength - 1) * oldLength;
+      // Only the replacement middle absorbs its extra arc length. The original
+      // curls keep both their reveal milestones and their arc-length velocity.
+      let distance = originalDistance;
+      if (originalDistance > prefixLength) {
+        distance = originalDistance < prefixLength + oldMiddleLength
+          ? prefixLength +
+            middleDistance(originalDistance - prefixLength)
+          : originalDistance + newMiddleLength - oldMiddleLength;
+      }
+      const dashParameter = (1 + distance / newLength) / 2;
+      path.style.strokeDasharray = `${dashParameter} 1`;
+      path.style.strokeDashoffset = String(1 - dashParameter);
+    };
+
+    // offset geometry deliberately ignores temporary reveal transforms on the
+    // cards/copy. Convert its viewport coordinates through the SVG's real CTM.
+    const layoutPosition = (element: HTMLElement): { x: number; y: number } => {
+      let x = -window.scrollX;
+      let y = -window.scrollY;
+      let node: HTMLElement | null = element;
+      while (node) {
+        x += node.offsetLeft;
+        y += node.offsetTop;
+        node = node.offsetParent as HTMLElement | null;
+      }
+      return { x, y };
+    };
+
+    const updateTerminalRoute = (): void => {
+      const svgBounds = svg.getBoundingClientRect();
+      const matrix = svg.getScreenCTM();
+      if (svgBounds.width === 0 || !matrix) return;
+      const inverse = matrix.inverse();
+      const contentPosition = layoutPosition(terminalContent);
+      const productionPosition = layoutPosition(production);
+
+      // Keep the terminal strand centered in the available whitespace to the
+      // left of the ending copy, regardless of the tall SVG's responsive scale.
+      const strokeWidth = (1 * svgBounds.width) / 1278;
+      const targetViewportX = Math.max(strokeWidth / 2 + 8, contentPosition.x / 2);
+      const terminalX = new DOMPoint(targetViewportX, contentPosition.y).matrixTransform(
+        inverse,
+      ).x;
+
+      const terminalEntryX = terminalX + 24;
+
+      const oldMiddle = `C1201.28 2077.83 ${terminalX + 977.94} 2114.9275 ${terminalX + 700} 2160C${terminalX + 422.06} 2205.0725 ${terminalX + 89.52} 2258.12 ${terminalEntryX} 2306`;
+      const suffix = `C${terminalX - 41.52} 2353.88 ${terminalX - 54} 2420 ${terminalX + 4} 2412C${terminalX + 56} 2404 ${terminalX + 50} 2347 ${terminalX + 7} 2359C${terminalX - 31} 2370 ${terminalX - 38} 2444 ${terminalX + 9} 2458C${terminalX + 58} 2473 ${terminalX + 53} 2539 ${terminalX + 3} 2534C${terminalX - 45} 2529 ${terminalX - 41} 2479 ${terminalX + 2} 2487C${terminalX + 43} 2495 ${terminalX + 31} 2590 ${terminalX} 2668.89`;
+      const cardBottom = productionPosition.y + production.offsetHeight;
+      const gap = Math.max(0, contentPosition.y - cardBottom);
+      const corridor = new DOMPoint(0, cardBottom + gap * 0.55).matrixTransform(
+        inverse,
+      ).y;
+      const span = 1201.28 - terminalEntryX;
+      const scale = Math.max(0.12, Math.min(1, (gap * inverse.d) / 200, span / 800));
+      type Curve = readonly [number, number, number, number, number, number];
+      // Exact terminal six cubics, relative to their entry (terminalX + 24, 2306).
+      // Rotate +90 degrees in SVG coordinates: (x, y) -> (-y, x).
+      const terminalCopy: ReadonlyArray<Curve> = [
+        [-65.52, 47.88, -78, 114, -20, 106],
+        [32, 98, 26, 41, -17, 53],
+        [-55, 64, -62, 138, -15, 152],
+        [34, 167, 29, 233, -21, 228],
+        [-69, 223, -65, 173, -22, 181],
+        [19, 189, 7, 284, -24, 362.89],
+      ];
+      const last = terminalCopy[terminalCopy.length - 1];
+      const copyX = 1201.28 - span / 2 + (last[5] * scale) / 2;
+      const copyY = corridor - (last[4] * scale) / 2;
+      const point = (localX: number, localY: number): string =>
+        `${copyX - localY * scale} ${copyY + localX * scale}`;
+      const handle = 45 * scale;
+      const entryX = copyX + 180 * scale;
+      const first = terminalCopy[0];
+      const copiedPair = terminalCopy.map((curve) =>
+        `C${point(curve[0], curve[1])} ${point(curve[2], curve[3])} ${point(curve[4], curve[5])}`,
+      ).join('');
+      const pairExitControl = point(2 * last[4] - last[2], 2 * last[5] - last[3]);
+      // Finish the horizontal return before descending beside (not across)
+      // the paragraph, retaining the terminal entry's original C1 tangent.
+      const turnX = terminalEntryX + 60;
+      const descent = `C${turnX - 60} ${corridor} ${terminalX + 89.52} 2258.12 ${terminalEntryX} 2306`;
+      // Measure the previously approved middle at this same responsive layout.
+      const previousGuide = 1201.28 - 80 * scale;
+      const previousExit = copyX - last[5] * scale - 180 * scale;
+      const baselineMiddle = `C1201.28 2077.83 ${previousGuide + handle} ${corridor} ${previousGuide} ${corridor}C${previousGuide - handle} ${corridor} ${entryX + handle} ${corridor} ${entryX} ${corridor}C${entryX - handle} ${corridor} ${point(-first[0], -first[1])} ${point(0, 0)}${copiedPair}C${pairExitControl} ${previousExit + handle} ${corridor} ${previousExit} ${corridor}C${previousExit - handle} ${corridor} ${turnX + 60} ${corridor} ${turnX} ${corridor}${descent}`;
+      const baselineLength = measure(`M1201.28 1997.83${baselineMiddle}`);
+
+      const wave = Math.min(6, gap * 0.05) * inverse.d;
+      // On narrow layouts the pair's leading tail already uses most of the
+      // right-hand room. Keep the guide/control envelope progressing leftward.
+      const guideOffset = Math.min(120 * scale, (1201.28 - entryX) * 0.6);
+      const guideX = 1201.28 - guideOffset;
+      const guideHandle = Math.min(60 * scale, guideOffset / 2, (guideX - entryX) / 3);
+      const waveX = (guideX + entryX) / 2;
+      const waveHandle = Math.min(handle, (guideX - entryX) / 6);
+      const entryHandle = waveHandle;
+      const rightWave = Math.min(wave, (guideX - entryX) / 4);
+      let middle = `C1201.28 2077.83 ${guideX + guideHandle} ${corridor} ${guideX} ${corridor}`;
+      middle += `C${guideX - guideHandle} ${corridor} ${waveX + waveHandle} ${corridor + rightWave} ${waveX} ${corridor + rightWave}`;
+      middle += `C${waveX - waveHandle} ${corridor + rightWave} ${entryX + entryHandle} ${corridor} ${entryX} ${corridor}`;
+      middle += `C${entryX - entryHandle} ${corridor} ${point(-first[0], -first[1])} ${point(0, 0)}`;
+      const pairStart = measure(`M1201.28 1997.83${middle}`);
+      // Isolate the middle lobe at its self-crossing, retaining its upward
+      // entry direction in SVG coordinates and its exact original profile.
+      const splitCurve = (index: number, t: number): readonly [Curve, Curve] => {
+        const curve = terminalCopy[index];
+        const previous = index === 0 ? [0, 0] : terminalCopy[index - 1].slice(4);
+        const mix = (a: readonly number[], b: readonly number[]): number[] =>
+          [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        const a = mix(previous, curve.slice(0, 2));
+        const b = mix(curve.slice(0, 2), curve.slice(2, 4));
+        const c = mix(curve.slice(2, 4), curve.slice(4));
+        const d = mix(a, b);
+        const e = mix(b, c);
+        const p = mix(d, e);
+        return [
+          [a[0], a[1], d[0], d[1], p[0], p[1]],
+          [e[0], e[1], c[0], c[1], curve[4], curve[5]],
+        ];
+      };
+      const [approach, lobeStart] = splitCurve(3, 0.7976340086318667);
+      const [lobeEnd, departure] = splitCurve(5, 0.38656784004902905);
+      const copiedCurve = (curve: Curve): string =>
+        `C${point(curve[0], curve[1])} ${point(curve[2], curve[3])} ${point(curve[4], curve[5])}`;
+      middle += terminalCopy.slice(0, 3).map(copiedCurve).join('');
+      middle += copiedCurve(approach);
+      const secondLoopStart = measure(`M1201.28 1997.83${middle}`);
+      middle += [lobeStart, terminalCopy[4], lobeEnd].map(copiedCurve).join('');
+      const secondLoopEnd = measure(`M1201.28 1997.83${middle}`);
+      middle += copiedCurve(departure);
+
+      // A single additional lobe: the first three unchanged terminal cubics.
+      // Reserve room for both joining handles, shrinking only this whole copy.
+      const pairEndX = copyX - last[5] * scale;
+      const available = pairEndX - turnX;
+      const singleScale = Math.min(scale, Math.max(0.05, (available - 80 * scale - 45) / 200));
+      const singleGap = Math.max(80 * scale + 48 * singleScale, (available - 152 * singleScale) / 2);
+      const singleX = pairEndX - singleGap;
+      const singleY = corridor + 7.5 * singleScale;
+      const singlePoint = (localX: number, localY: number): string =>
+        `${singleX - localY * singleScale} ${singleY + localX * singleScale}`;
+      middle += `C${pairExitControl} ${singlePoint(-first[0], -first[1])} ${singlePoint(0, 0)}`;
+      const singleStart = measure(`M1201.28 1997.83${middle}`);
+      for (const curve of terminalCopy.slice(0, 3)) {
+        middle += `C${singlePoint(curve[0], curve[1])} ${singlePoint(curve[2], curve[3])} ${singlePoint(curve[4], curve[5])}`;
+      }
+      const singleLast = terminalCopy[2];
+      // Start the final turn earlier and use a longer horizontal tangent, within
+      // the actual room left by the third lobe. The suffix entry stays frozen.
+      const singleExitX = singleX - 152 * singleScale;
+      const turnRadius = Math.min(180 * scale, (singleExitX - terminalEntryX) * 0.6);
+      const roundedTurnX = terminalEntryX + turnRadius;
+      const leftWaveX = (singleExitX + roundedTurnX) / 2;
+      const leftHandle = Math.min(30 * singleScale, (leftWaveX - roundedTurnX) / 3);
+      const turnHandle = Math.min(
+        turnRadius * 0.5522847498,
+        leftWaveX - roundedTurnX - leftHandle,
+      );
+      middle += `C${singlePoint(2 * singleLast[4] - singleLast[2], 2 * singleLast[5] - singleLast[3])} ${leftWaveX + leftHandle} ${corridor + wave} ${leftWaveX} ${corridor + wave}`;
+      middle += `C${leftWaveX - leftHandle} ${corridor + wave} ${roundedTurnX + turnHandle} ${corridor} ${roundedTurnX} ${corridor}`;
+      middle += `C${roundedTurnX - turnHandle} ${corridor} ${terminalX + 89.52} 2258.12 ${terminalEntryX} 2306`;
+
+      // Exact original crossing parameters; split with de Casteljau so only the
+      // actual closed lobes, not the long six-cubic tails, receive extra time.
+      const partialLength = (index: number, t: number): number => {
+        const curve = terminalCopy[index];
+        const previous = index === 0 ? [0, 0] : terminalCopy[index - 1].slice(4);
+        const mix = (a: number[], b: number[]): number[] =>
+          [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        const a = mix(previous, curve.slice(0, 2));
+        const b = mix(curve.slice(0, 2), curve.slice(2, 4));
+        const c = mix(curve.slice(2, 4), curve.slice(4));
+        const d = mix(a, b);
+        const e = mix(b, c);
+        const endpoint = mix(d, e);
+        const preceding = terminalCopy.slice(0, index).map((segment) => `C${segment.join(' ')}`).join('');
+        return measure(`M0 0${preceding}C${a.join(' ')} ${d.join(' ')} ${endpoint.join(' ')}`);
+      };
+      const firstLoop = [partialLength(0, 0.7841186511348044), partialLength(2, 0.5028695760597145)];
+      const loops: ReadonlyArray<readonly [number, number]> = [
+        [pairStart + firstLoop[0] * scale, pairStart + firstLoop[1] * scale],
+        [secondLoopStart, secondLoopEnd],
+        [singleStart + firstLoop[0] * singleScale, singleStart + firstLoop[1] * singleScale],
+      ];
+      newMiddleLength = measure(`M1201.28 1997.83${middle}`);
+      const suffixLength = measure(`M${terminalEntryX} 2306${suffix}`);
+      // Measure the immutable reference and replacement in their entirety too;
+      // derive the reference middle consistently with the browser's total length.
+      oldLength = measure(`${routePrefix}${oldMiddle}${suffix}`);
+      newLength = measure(`${routePrefix}${middle}${suffix}`);
+      oldMiddleLength = oldLength - prefixLength - suffixLength;
+      updateMiddleTiming(baselineLength, loops);
+      path.setAttribute('d', `${routePrefix}${middle}${suffix}`);
+      render();
+    };
+
     const media = gsap.matchMedia();
     activeCleanups.push(() => media.revert());
-    media.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
-      let active = true;
+    media.add('(min-width: 640px) and (prefers-reduced-motion: no-preference)', () => {
+      const previousDashStyles = ['stroke-dasharray', 'stroke-dashoffset'].map(
+        (property) => ({
+          property,
+          value: path.style.getPropertyValue(property),
+          priority: path.style.getPropertyPriority(property),
+        }),
+      );
 
-      const routeSource = path.getAttribute('d');
-      if (!routeSource) return;
-      route.dataset.threadActive = 'true';
-
-      const updateTerminalRoute = (): void => {
-        const bounds = region.getBoundingClientRect();
-        const intro = region
-          .querySelector<HTMLElement>('.section-intro__inner')
-          ?.getBoundingClientRect();
-        const cards = region
-          .querySelector<HTMLElement>('.section-services__grid')
-          ?.getBoundingClientRect();
-        const copy = terminalContent.getBoundingClientRect();
-        if (!intro || !cards || !bounds.width) return;
-        svg.setAttribute('viewBox', `0 0 ${bounds.width} ${bounds.height}`);
-        // Remap the original continuous Skiper strand (including its curls),
-        // rather than adding detached ornaments. All crossings stay in whitespace.
-        const offset = parseFloat(
-          getComputedStyle(region.querySelector('.section-intro')!).paddingTop,
-        );
-        const origin =
-          offset +
-          Math.min(48, Math.max(26, bounds.width * 0.03)) +
-          Math.min(32, Math.max(16, bounds.width * 0.02)) +
-          Math.min(64, Math.max(32, bounds.width * 0.04)) +
-          30;
-        const beforeCards = intro.bottom - bounds.top + 28;
-        const afterCards = cards.bottom - bounds.top + 32;
-        const aboveCopy = copy.top - bounds.top - 36;
-        const leftGutter = Math.max(10, (cards.left - bounds.left) / 2);
-        const rightStart = intro.right - bounds.left + 18;
-        const rightWidth = Math.max(8, bounds.width - rightStart - 12);
-        let coordinate = 0;
-        let sourceX = 0;
-        path.setAttribute(
-          'd',
-          routeSource.replace(/-?\d*\.?\d+/g, (value) => {
-            const n = Number(value);
-            if (coordinate++ % 2 === 0) {
-              sourceX = n;
-              return '';
-            }
-            let x: number;
-            let y: number;
-            if (n <= 560) {
-              x = rightStart + ((sourceX - 490) / 790) * rightWidth;
-              y = origin + (n - 394.131) * 0.3;
-            } else if (n <= 1141) {
-              // Stay in the right gutter until the whole introduction is cleared.
-              // Cubic controls in this descent must not shortcut through long locales.
-              x = rightStart + ((sourceX - 490) / 790) * rightWidth;
-              y =
-                origin +
-                (560 - 394.131) * 0.3 +
-                ((n - 560) / 581) * (beforeCards - origin - (560 - 394.131) * 0.3);
-            } else if (n <= 1300) {
-              const progress = (n - 1141) / 159;
-              x = leftGutter + (sourceX / 1278) * (bounds.width - leftGutter - 12);
-              y = beforeCards + progress * Math.max(12, cards.top - bounds.top - 32 - beforeCards);
-            } else if (n <= 2000) {
-              x = leftGutter + (sourceX / 1278 - 0.5) * Math.max(4, leftGutter - 8);
-              // The transition's cubic controls must also stay above the cards;
-              // moving only its endpoint lets the curve clip the first photograph.
-              y = cards.top - bounds.top - 32 + (Math.max(0, n - 1460) / 540) * (cards.height + 64);
-            } else {
-              x = leftGutter + (sourceX / 1278) * (bounds.width - leftGutter - 12);
-              if (n >= 2200) x = leftGutter + 16 + (sourceX + 54) * 0.45;
-              const gap = Math.max(12, aboveCopy - afterCards);
-              y =
-                n <= 2306
-                  ? afterCards + ((n - 2000) / 306) * gap * 0.35
-                  : afterCards + gap * (0.35 + ((n - 2306) / 363) * 0.65);
-            }
-            return `${x.toFixed(2)} ${y.toFixed(2)}`;
-          }),
-        );
-      };
-
+      draw.pathLength = 0.5;
       updateTerminalRoute();
 
-      const context = gsap.context(() => {
-        const draw = { pathLength: 0.5 };
-        const render = (): void => {
-          path.style.strokeDasharray = `${draw.pathLength} 1`;
-          path.style.strokeDashoffset = String(1 - draw.pathLength);
-        };
-
-        render();
-        gsap.to(draw, {
-          pathLength: 1,
-          ease: 'none',
-          onUpdate: render,
-          scrollTrigger: {
-            trigger: route,
-            start: 'top 80%',
-            endTrigger: end,
-            end: 'top bottom',
-            scrub: 4,
-            invalidateOnRefresh: true,
-            onRefresh: updateTerminalRoute,
-          },
-        });
-      }, region);
-
-      const observer = new ResizeObserver(() => {
-        updateTerminalRoute();
-      });
-      observer.observe(region);
-      void document.fonts.ready.then(() => {
-        if (active && region.isConnected) updateTerminalRoute();
+      render();
+      gsap.to(draw, {
+        pathLength: 1,
+        ease: 'none',
+        onUpdate: render,
+        scrollTrigger: {
+          trigger: route,
+          start: 'top 75%',
+          endTrigger: end,
+          end: 'top bottom',
+          scrub: 4,
+          invalidateOnRefresh: true,
+          onRefresh: updateTerminalRoute,
+        },
       });
       return () => {
-        active = false;
-        observer.disconnect();
-        context.revert();
-        path.setAttribute('d', routeSource);
-        path.style.removeProperty('stroke-dasharray');
-        path.style.removeProperty('stroke-dashoffset');
-        delete route.dataset.threadActive;
+        // These styles are written manually, outside GSAP's style tracking.
+        previousDashStyles.forEach(({ property, value, priority }) => {
+          path.style.setProperty(property, value, priority);
+        });
       };
-    });
+    }, region);
   }
 
   function cleanupHomeScrollStroke(): void {

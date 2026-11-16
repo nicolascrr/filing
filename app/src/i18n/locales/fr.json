@@ -10,9 +10,11 @@
       "sampleCount": "Échantillons : {count}",
       "imageCount": "Images : {count}",
       "viewCategory": "Voir la catégorie {category}",
-      "emptyCoiling": "Aucun échantillon Coiling disponible pour le moment."
+      "emptyCoiling": "Aucun échantillon Coiling disponible pour le moment.",
+      "empty": "Aucune image disponible pour le moment."
     },
     "photo": {
+      "zoomHelp": "À la souris, cliquez pour zoomer à 2,5×, puis cliquez à nouveau pour revenir au cadrage initial. Faites glisser pour déplacer l’image zoomée. Sur écran tactile, pincez jusqu’à 2,5× ou touchez deux fois pour zoomer ou réinitialiser. Lorsque l’image a le focus : + et − pour zoomer, 0 pour réinitialiser, flèches pour déplacer l’image zoomée ou changer d’image au cadrage initial.",
       "zoomIn": "Zoom avant",
       "zoomOut": "Zoom arrière",
       "reset": "Réinitialiser le zoom",
@@ -166,7 +168,6 @@
       "3d": "3D",
       "cornely": "Cornely",
       "macrame": "Macramé",
-      "coiling": "Coiling",
       "perles": "Perles",
       "multi-techniques": "Multi-techniques",
       "sequins": "Sequins",
@@ -240,16 +241,25 @@
       "contact": "CONTACT",
       "trajet": "TRAJET DEPUIS",
       "gare": "Gare TGV Lyon Part-Dieu",
-      "aeroport": "Aéroport et Gare TGV Lyon Saint-Exupéry",
+      "aeroport": "Aéroport Lyon Saint-Exupéry",
+      "email": {
+        "dialogLabel": "Contacter Fil'ing par email",
+        "copy": "Copier l'adresse email contact@filing.fr",
+        "send": "Envoyer un mail",
+        "address": "Adresse email",
+        "copied": "Adresse copiée.",
+        "manual": "La copie automatique est indisponible. Sélectionnez l'adresse et copiez-la manuellement."
+      },
       "copyright": "2026 Fil'ing Broderies. © Tous droits réservés. Fait par Nicolas et Emilie.",
+      "legalNotice": "Mention légales",
       "sitemapLabel": "Plan du site",
       "aria": {
         "mail": "Envoyer un email à Fil'ing Broderies",
         "adresse": "Localiser Fil'ing Broderies sur la carte",
         "instagram": "Instagram de Fil'ing Broderies (ouvre dans un nouvel onglet)",
         "linkedin": "LinkedIn de Fil'ing Broderies (ouvre dans un nouvel onglet)",
-        "gare": "Gare TGV Lyon Part-Dieu",
-        "aeroport": "Aéroport et Gare TGV Lyon Saint-Exupéry"
+        "gare": "Itinéraire vers Fil'ing depuis la gare TGV Lyon Part-Dieu (nouvel onglet)",
+        "aeroport": "Itinéraire vers Fil'ing depuis l'aéroport Lyon Saint-Exupéry (nouvel onglet)"
       }
     }
   }

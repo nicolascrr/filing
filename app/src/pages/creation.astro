@@ -5,7 +5,7 @@
  * Composes the Création page:
  *   1. Headerless image hero with centered uppercase page name (full-width)
  *   2. Intro — 3 centered paragraphs (bold segments parsed from i18n)
- *   3. AtelierPresentation — eight supplied photographs in editorial diptychs
+ *   3. AtelierPresentation — eight supplied photographs in complete rows
  *   4. Facts — 2 ValueBlocks horizontally (stacks on mobile)
  *
  * Footer comes automatically from BaseLayout — not re-added here.
@@ -19,9 +19,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { parseBold } from '../i18n/t';
 import Hero from '../components/sections/PageHero.astro';
 import AtelierPresentation from '../components/ui/AtelierPresentation.astro';
-import { creationMedia } from '../data/presentationMedia';
+import { creationMedia, presentationCompositions } from '../data/presentationMedia';
 import ValueBlock from '../components/ui/ValueBlock.astro';
-import heroImg from '../assets/photos/hero/creation-lead.jpg';
+import heroImg from '../assets/hero/creation-lead.jpg';
 // ValueBlock logos — original supplied SVG pictos.
 import iconDev from '../assets/icons/developpement.svg';
 import iconCouleurs from '../assets/icons/bobine_fils.svg';
@@ -54,12 +54,16 @@ const t = Astro.locals.t;
     </div>
   </section>
 
-  <!-- 3. Noninteractive editorial presentation -->
+  <!-- 3. Complete photographic rows; enlargement on mobile only -->
   <section
     class="section-gallery section-gallery--wide"
     aria-label={t('common.sectionLabels.gallery')}
   >
-    <AtelierPresentation images={creationMedia} />
+    <AtelierPresentation
+      images={creationMedia}
+      layout="compact"
+      composition={presentationCompositions.creation}
+    />
   </section>
 
   <!-- 4. Facts — 2 ValueBlocks horizontally (stacks on mobile) -->
@@ -98,6 +102,7 @@ const t = Astro.locals.t;
   .section-gallery--wide {
     width: 100%;
     padding-inline: var(--content-padding);
+    padding-block: clamp(1rem, 2vw, 2rem);
   }
 
   /* ---- Intro ---- */

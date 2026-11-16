@@ -5,7 +5,14 @@ import astro from 'eslint-plugin-astro';
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ['dist/**', 'node_modules/**', '.astro/**', '*.config.mjs', 'eslint.config.mjs'],
+    ignores: [
+      'dist/**',
+      '.vercel/**',
+      'node_modules/**',
+      '.astro/**',
+      '*.config.mjs',
+      'eslint.config.mjs',
+    ],
   },
 
   // Astro plugin: recommended + a11y rules (includes base JS rules)

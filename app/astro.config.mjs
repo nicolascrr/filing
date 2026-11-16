@@ -2,13 +2,16 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
   // Cookie-based i18n (D1) requires server-rendered pages so that
   // `Astro.cookies.get('locale')` is available on every request.
   output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  // Vercel consumes Build Output API functions, not the standalone dist/ server.
+  adapter:
+    process.env.VERCEL === '1' ? vercel({ imageService: false }) : node({ mode: 'standalone' }),
   vite: {
     plugins: [tailwindcss()],
     // V2-01: the real client photos in `src/content/` use uppercase file
